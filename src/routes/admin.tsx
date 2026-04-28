@@ -95,11 +95,12 @@ function AdminPage() {
 
       <div className="max-w-3xl mx-auto p-4">
         <Tabs defaultValue="dep">
-          <TabsList className="w-full grid grid-cols-4 bg-card">
+          <TabsList className="w-full grid grid-cols-5 bg-card">
             <TabsTrigger value="dep">Depósitos {deps.filter(d => d.status === "pending").length > 0 && <span className="ml-1 text-warning">({deps.filter(d => d.status === "pending").length})</span>}</TabsTrigger>
             <TabsTrigger value="wit">Levantar {wits.filter(d => d.status === "pending").length > 0 && <span className="ml-1 text-warning">({wits.filter(d => d.status === "pending").length})</span>}</TabsTrigger>
             <TabsTrigger value="usr">Utilizadores</TabsTrigger>
             <TabsTrigger value="acc">Contas</TabsTrigger>
+            <TabsTrigger value="lnk">Links</TabsTrigger>
           </TabsList>
 
           <TabsContent value="dep" className="space-y-2 mt-3">
@@ -163,6 +164,10 @@ function AdminPage() {
                 </Button>
               </div>
             ))}
+          </TabsContent>
+
+          <TabsContent value="lnk" className="space-y-3 mt-3">
+            <SettingsLinks />
           </TabsContent>
         </Tabs>
       </div>
