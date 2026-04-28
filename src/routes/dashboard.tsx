@@ -6,8 +6,9 @@ import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
+import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Plus, MessageCircle, Users } from "lucide-react";
+import { Plus, MessageCircle, Users, PlaySquare, Sparkles, Gift } from "lucide-react";
 import promo247 from "@/assets/promo-247.png";
 import promoSecurity from "@/assets/promo-security.png";
 import promoInvite from "@/assets/promo-invite.jpg";
@@ -82,6 +83,21 @@ function Dashboard() {
             ))}
           </CarouselContent>
         </Carousel>
+
+        <div className="grid grid-cols-3 gap-2">
+          <Link to="/tasks" className="rounded-2xl p-3 bg-card flex flex-col items-center text-center gap-1" style={{ boxShadow: "var(--shadow-card)" }}>
+            <PlaySquare className="size-6 text-primary" />
+            <div className="text-xs font-bold">Tarefas</div>
+          </Link>
+          <Link to="/roulette" className="rounded-2xl p-3 bg-card flex flex-col items-center text-center gap-1" style={{ boxShadow: "var(--shadow-card)" }}>
+            <Sparkles className="size-6 text-primary" />
+            <div className="text-xs font-bold">Roleta</div>
+          </Link>
+          <Link to="/checkin" className="rounded-2xl p-3 bg-card flex flex-col items-center text-center gap-1" style={{ boxShadow: "var(--shadow-card)" }}>
+            <Gift className="size-6 text-primary" />
+            <div className="text-xs font-bold">Pesquisa</div>
+          </Link>
+        </div>
 
         <div>
           <h2 className="text-xl font-bold mb-3 px-1">Planos de Investimento</h2>
