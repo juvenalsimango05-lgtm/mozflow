@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -19,12 +19,23 @@ function WithdrawPage() {
   const [phone, setPhone] = useState("");
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
+  const [minAmt, setMinAmt] = useState(50);
+  const [maxAmt, setMaxAmt] = useState(100000);
+
+  useEffect(() => {
+    supabase.from("app_settings").select("key,value").in("key", ["withdraw_min", "withdraw_max"]).then(({ data }) => {
+      const m = Object.fromEntries((data ?? []).map((r: { key: string; value: string }) => [r.key, r.value]));
+      if (m.withdraw_min) setMinAmt(Number(m.withdraw_min) || 50);
+      if (m.withdraw_max) setMaxAmt(Number(m.withdraw_max) || 100000);
+    });
+  }, []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !profile) return;
     const amt = Number(amount);
-    if (!amt || amt < 50) { toast.error("Mínimo: 50 MZN"); return; }
+    if (!amt || amt < minAmt) { toast.error(`Mínimo: ${minAmt} MZN`); return; }
+    if (amt > maxAmt) { toast.error(`Máximo: ${maxAmt} MZN`); return; }
     if (amt > Number(profile.balance)) { toast.error("Saldo insuficiente"); return; }
     if (!phone.trim()) { toast.error("Indique o número de destino"); return; }
     setLoading(true);
@@ -69,7 +80,8 @@ function WithdrawPage() {
         </div>
         <div className="space-y-2">
           <Label>Valor a levantar (MZN)</Label>
-          <Input value={amount} onChange={(e) => setAmount(e.target.value)} type="number" inputMode="numeric" placeholder="600" className="h-14 rounded-xl bg-card border-0 text-lg" />
+          <Input value={amount} onChange={(e) => setAmount(e.target.value)} type="number" inputMode="numeric" placeholder={String(minAmt)} className="h-14 rounded-xl bg-card border-0 text-lg" />
+          <p className="text-xs text-muted-foreground">Min: {minAmt} MZN • Max: {maxAmt} MZN</p>
         </div>
 
         <Button type="submit" disabled={loading} className="w-full h-14 rounded-full text-base font-semibold" style={{ background: "var(--gradient-primary)" }}>
