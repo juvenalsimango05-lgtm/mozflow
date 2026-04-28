@@ -122,6 +122,33 @@ export type Database = {
         }
         Relationships: []
       }
+      home_slides: {
+        Row: {
+          id: string
+          image_url: string
+          is_active: boolean
+          link_url: string
+          slot: number
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          link_url?: string
+          slot: number
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          link_url?: string
+          slot?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       investments: {
         Row: {
           amount: number
