@@ -12,6 +12,8 @@ import { AdminPlans } from "@/components/admin/AdminPlans";
 import { AdminTasks } from "@/components/admin/AdminTasks";
 import { AdminRoulette } from "@/components/admin/AdminRoulette";
 import { AdminCheckin } from "@/components/admin/AdminCheckin";
+import { AdminGeneral } from "@/components/admin/AdminGeneral";
+import { AdminSlides } from "@/components/admin/AdminSlides";
 
 export const Route = createFileRoute("/admin")({ component: AdminPage });
 
@@ -47,6 +49,31 @@ function AdminPage() {
         balance: Number(prof.balance) + Number(d.amount),
         total_deposit: Number(prof.total_deposit) + Number(d.amount),
       }).eq("id", d.user_id);
+    }
+    // Credit referral reward to the referrer (only on the user's FIRST approved deposit)
+    const { data: depUser } = await supabase.from("profiles").select("referred_by").eq("id", d.user_id).single();
+    if (depUser?.referred_by) {
+      const { count: priorApproved } = await supabase.from("deposits")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", d.user_id).eq("status", "approved").neq("id", d.id);
+      if ((priorApproved ?? 0) === 0) {
+        const { data: rewardSetting } = await supabase.from("app_settings").select("value").eq("key", "referral_reward").single();
+        const rewardAmt = Number(rewardSetting?.value ?? 0);
+        if (rewardAmt > 0) {
+          const { data: refProf } = await supabase.from("profiles").select("balance, referral_earnings").eq("id", depUser.referred_by).single();
+          if (refProf) {
+            await supabase.from("profiles").update({
+              balance: Number(refProf.balance) + rewardAmt,
+              referral_earnings: Number(refProf.referral_earnings) + rewardAmt,
+            }).eq("id", depUser.referred_by);
+            await supabase.from("referral_earnings").insert({
+              referrer_id: depUser.referred_by,
+              referred_user_id: d.user_id,
+              amount: rewardAmt,
+            });
+          }
+        }
+      }
     }
     toast.success("Depósito aprovado e saldo creditado");
     load();
@@ -109,6 +136,8 @@ function AdminPage() {
             <TabsTrigger value="tsk">Tarefas</TabsTrigger>
             <TabsTrigger value="rlt">Roleta</TabsTrigger>
             <TabsTrigger value="chk">Pesquisa</TabsTrigger>
+            <TabsTrigger value="sld">Slides</TabsTrigger>
+            <TabsTrigger value="gen">Geral</TabsTrigger>
           </TabsList>
 
           <TabsContent value="dep" className="space-y-2 mt-3">
@@ -182,6 +211,8 @@ function AdminPage() {
           <TabsContent value="tsk" className="space-y-3 mt-3"><AdminTasks /></TabsContent>
           <TabsContent value="rlt" className="space-y-3 mt-3"><AdminRoulette /></TabsContent>
           <TabsContent value="chk" className="space-y-3 mt-3"><AdminCheckin /></TabsContent>
+          <TabsContent value="sld" className="space-y-3 mt-3"><AdminSlides /></TabsContent>
+          <TabsContent value="gen" className="space-y-3 mt-3"><AdminGeneral /></TabsContent>
         </Tabs>
       </div>
     </div>
