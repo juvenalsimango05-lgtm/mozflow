@@ -47,6 +47,12 @@ function Dashboard() {
     });
   }, []);
 
+  // Auto-settle hourly payouts every 5 minutes while the dashboard is open
+  useEffect(() => {
+    const id = setInterval(() => { void refresh(); }, 5 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [refresh]);
+
   const invest = async (plan: Plan) => {
     if (!profile) return;
     if (Number(profile.balance) < Number(plan.price)) {
