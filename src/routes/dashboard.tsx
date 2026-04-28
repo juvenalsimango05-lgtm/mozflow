@@ -22,12 +22,15 @@ interface Plan {
 
 const SLIDES = [promo247, promoInvite, promoSecurity];
 
+interface SlideRow { image_url: string; link_url: string; }
+
 function Dashboard() {
   const { profile, refresh } = useAuth();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [investing, setInvesting] = useState<string | null>(null);
   const [whatsappUrl, setWhatsappUrl] = useState<string>("");
   const [communityUrl, setCommunityUrl] = useState<string>("");
+  const [slides, setSlides] = useState<SlideRow[]>([]);
 
   useEffect(() => {
     supabase.from("plans").select("*").eq("is_active", true).order("sort_order").then(({ data }) => {
@@ -37,6 +40,10 @@ function Dashboard() {
       const map = Object.fromEntries((data ?? []).map((r: { key: string; value: string }) => [r.key, r.value]));
       setWhatsappUrl(map.whatsapp_url ?? "");
       setCommunityUrl(map.community_url ?? "");
+    });
+    supabase.from("home_slides").select("image_url,link_url,is_active,slot").eq("is_active", true).order("slot").then(({ data }) => {
+      const rows = (data ?? []).filter((r: any) => r.image_url) as SlideRow[];
+      setSlides(rows);
     });
   }, []);
 
@@ -68,21 +75,35 @@ function Dashboard() {
   return (
     <AppShell>
       <div className="px-4 pt-4 space-y-5">
+        {(() => {
+        const display = slides.length > 0
+          ? slides
+          : SLIDES.map((src) => ({ image_url: src, link_url: "" }));
+        return (
         <Carousel
           opts={{ loop: true }}
           plugins={[Autoplay({ delay: 4000, stopOnInteraction: false })]}
           className="rounded-2xl overflow-hidden"
         >
           <CarouselContent>
-            {SLIDES.map((src, i) => (
-              <CarouselItem key={i}>
+            {display.map((s, i) => {
+              const inner = (
                 <div className="aspect-[16/9] w-full overflow-hidden rounded-2xl" style={{ boxShadow: "var(--shadow-card)" }}>
-                  <img src={src} alt={`Promo ${i + 1}`} className="w-full h-full object-cover" />
+                  <img src={s.image_url} alt={`Promo ${i + 1}`} className="w-full h-full object-cover" />
                 </div>
-              </CarouselItem>
-            ))}
+              );
+              return (
+                <CarouselItem key={i}>
+                  {s.link_url ? (
+                    <a href={s.link_url} target="_blank" rel="noopener noreferrer">{inner}</a>
+                  ) : inner}
+                </CarouselItem>
+              );
+            })}
           </CarouselContent>
         </Carousel>
+        );
+        })()}
 
         <div className="grid grid-cols-3 gap-2">
           <Link to="/tasks" className="rounded-2xl p-3 bg-card flex flex-col items-center text-center gap-1" style={{ boxShadow: "var(--shadow-card)" }}>
