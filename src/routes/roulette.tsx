@@ -48,7 +48,12 @@ function RoulettePage() {
     for (const p of prizes) { r -= Number(p.probability); if (r <= 0) { winner = p; break; } }
 
     const slice = 360 / prizes.length;
-    const target = 360 * 6 + (360 - winner.slot_index * slice - slice / 2);
+    // Pointer is at top (12h = -90deg). conic-gradient starts at top by default in this layout,
+    // so to bring slot center under the pointer we rotate by -(center) plus full spins.
+    const center = winner.slot_index * slice + slice / 2;
+    // keep monotonic increase across spins so animation always rotates forward
+    const base = Math.ceil(angle / 360) * 360;
+    const target = base + 360 * 6 + (360 - center);
     setAngle(target);
 
     setTimeout(async () => {
@@ -73,21 +78,32 @@ function RoulettePage() {
         <p className="text-center text-sm text-muted-foreground">Voltas grátis hoje: <span className="text-success font-bold">{remaining}</span> / {maxFree}</p>
 
         <div className="relative mx-auto" style={{ width: 300, height: 300 }}>
-          <div className="absolute -top-2 left-1/2 -translate-x-1/2 z-10 size-0" style={{ borderLeft: "12px solid transparent", borderRight: "12px solid transparent", borderTop: "20px solid hsl(var(--primary))" }} />
+          {/* Pointer / indicator at top */}
+          <div
+            className="absolute -top-3 left-1/2 -translate-x-1/2 z-20 size-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
+            style={{
+              borderLeft: "16px solid transparent",
+              borderRight: "16px solid transparent",
+              borderTop: "28px solid hsl(var(--primary))",
+            }}
+          />
+          <div className="absolute -top-1 left-1/2 -translate-x-1/2 z-20 size-3 rounded-full bg-primary border-2 border-background" />
           <div
             ref={wheelRef}
-            className="size-full rounded-full overflow-hidden border-4 border-primary/50"
+            className="size-full rounded-full overflow-hidden border-4 border-primary/60 shadow-[0_0_30px_rgba(124,58,237,0.4)]"
             style={{
               transition: spinning ? "transform 4s cubic-bezier(.17,.67,.21,.99)" : "none",
               transform: `rotate(${angle}deg)`,
-              background: prizes.length ? `conic-gradient(${prizes.map((_, i) => `${COLORS[i % 8]} ${i * slice}deg ${(i + 1) * slice}deg`).join(",")})` : "var(--gradient-card)",
+              background: prizes.length
+                ? `conic-gradient(from -${slice / 2}deg, ${prizes.map((_, i) => `${COLORS[i % 8]} ${i * slice}deg ${(i + 1) * slice}deg`).join(",")})`
+                : "var(--gradient-card)",
             }}
           >
             {prizes.map((p, i) => (
               <div
                 key={p.id}
                 className="absolute top-1/2 left-1/2 origin-left text-white font-bold text-xs"
-                style={{ transform: `rotate(${i * slice + slice / 2}deg) translateX(60px)` }}
+                style={{ transform: `rotate(${i * slice}deg) translateX(60px)` }}
               >
                 {p.label}
               </div>
@@ -101,9 +117,12 @@ function RoulettePage() {
         </Button>
 
         {last && (
-          <div className="rounded-2xl p-5 bg-card text-center">
-            <div className="text-sm text-muted-foreground">Ganhou</div>
-            <div className="text-2xl font-bold text-success">{last.label}</div>
+          <div className="rounded-2xl p-5 bg-card text-center animate-scale-in border-2 border-primary/40">
+            <div className="text-sm text-muted-foreground">A roleta parou em</div>
+            <div className="text-3xl font-bold text-success mt-1">{last.label}</div>
+            {Number(last.amount) > 0
+              ? <div className="text-xs text-muted-foreground mt-1">Creditado no seu saldo</div>
+              : <div className="text-xs text-muted-foreground mt-1">Boa sorte na próxima!</div>}
           </div>
         )}
       </div>
