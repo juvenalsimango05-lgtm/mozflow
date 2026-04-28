@@ -571,6 +571,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      settle_hourly_payouts: { Args: never; Returns: number }
     }
     Enums: {
       app_role: "admin" | "user"
