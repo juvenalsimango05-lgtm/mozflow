@@ -43,7 +43,7 @@ function LoginPage() {
         </Button>
       </form>
       <p className="text-center text-sm text-muted-foreground mt-8">
-        Ainda não tem conta? <Link to="/register" className="text-warning font-semibold">Registar</Link>
+        Ainda não tem conta? <Link to="/register" search={{ ref: "" }} className="text-warning font-semibold">Registar</Link>
       </p>
     </div>
   );

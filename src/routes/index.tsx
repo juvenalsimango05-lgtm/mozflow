@@ -22,7 +22,7 @@ function Index() {
         <MozFlowLogo className="text-2xl" />
         <div className="flex gap-2">
           <Link to="/login"><Button variant="ghost" size="sm">Entrar</Button></Link>
-          <Link to="/register"><Button size="sm">Registar</Button></Link>
+          <Link to="/register" search={{ ref: "" }}><Button size="sm">Registar</Button></Link>
         </div>
       </header>
 
@@ -36,7 +36,7 @@ function Index() {
           Invista o valor que quiser e receba retornos automáticos. Disponível todos os dias, a qualquer hora.
         </p>
         <div className="mt-7 flex gap-3 justify-center">
-          <Link to="/register"><Button size="lg" className="rounded-full px-8">Começar agora</Button></Link>
+          <Link to="/register" search={{ ref: "" }}><Button size="lg" className="rounded-full px-8">Começar agora</Button></Link>
           <Link to="/login"><Button size="lg" variant="outline" className="rounded-full px-8">Já tenho conta</Button></Link>
         </div>
 

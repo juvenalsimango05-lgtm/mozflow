@@ -1,11 +1,16 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import Autoplay from "embla-carousel-autoplay";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import { toast } from "sonner";
-import { Copy, BarChart3, ArrowDownUp, Receipt, Share2, LogOut, ChevronRight, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
+import promo247 from "@/assets/promo-247.png";
+import promoSecurity from "@/assets/promo-security.png";
+import promoInvite from "@/assets/promo-invite.jpg";
 
 export const Route = createFileRoute("/dashboard")({ component: Dashboard });
 
@@ -14,8 +19,10 @@ interface Plan {
   daily_return: number; duration_days: number; net_profit: number;
 }
 
+const SLIDES = [promo247, promoInvite, promoSecurity];
+
 function Dashboard() {
-  const { profile, signOut, refresh } = useAuth();
+  const { profile, refresh } = useAuth();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [investing, setInvesting] = useState<string | null>(null);
 
@@ -24,8 +31,6 @@ function Dashboard() {
       setPlans((data as Plan[]) ?? []);
     });
   }, []);
-
-  const masked = profile ? `+258 ${profile.phone.slice(0, 5)}***${profile.phone.slice(-2)}` : "";
 
   const invest = async (plan: Plan) => {
     if (!profile) return;
@@ -52,88 +57,26 @@ function Dashboard() {
     toast.success(`Investimento ${plan.code} ativado!`);
   };
 
-  const copyRef = () => {
-    if (!profile) return;
-    navigator.clipboard.writeText(profile.referral_code);
-    toast.success("Código copiado");
-  };
-
   return (
     <AppShell>
-      <div className="px-4 pt-4 space-y-4">
-        {/* Profile card */}
-        <div className="rounded-2xl p-5" style={{ background: "var(--gradient-card)", boxShadow: "var(--shadow-card)" }}>
-          <div className="flex items-center gap-4">
-            <div className="size-16 rounded-full bg-muted flex items-center justify-center text-2xl font-bold">
-              {profile?.name?.[0]?.toUpperCase() ?? "?"}
-            </div>
-            <div className="flex-1 text-center">
-              <div className="font-bold text-lg">{profile?.name}</div>
-              <div className="text-sm text-muted-foreground">{masked}</div>
-            </div>
-          </div>
-          <div className="flex items-center justify-between mt-4">
-            <button onClick={copyRef} className="flex items-center gap-1 text-primary text-sm font-mono">
-              {profile?.referral_code} <Copy className="size-3" />
-            </button>
-            <div className="flex gap-2">
-              <Link to="/deposit"><Button size="sm" className="rounded-full px-5" style={{ background: "var(--gradient-primary)" }}>DEPÓSITO</Button></Link>
-              <Link to="/withdraw"><Button size="sm" className="rounded-full px-5" style={{ background: "var(--gradient-primary)" }}>LEVANTAR</Button></Link>
-            </div>
-          </div>
-        </div>
+      <div className="px-4 pt-4 space-y-5">
+        <Carousel
+          opts={{ loop: true }}
+          plugins={[Autoplay({ delay: 4000, stopOnInteraction: false })]}
+          className="rounded-2xl overflow-hidden"
+        >
+          <CarouselContent>
+            {SLIDES.map((src, i) => (
+              <CarouselItem key={i}>
+                <div className="aspect-[16/9] w-full overflow-hidden rounded-2xl" style={{ boxShadow: "var(--shadow-card)" }}>
+                  <img src={src} alt={`Promo ${i + 1}`} className="w-full h-full object-cover" />
+                </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+        </Carousel>
 
-        {/* Stats grid */}
-        <div className="grid grid-cols-3 gap-2">
-          {[
-            { l: "DEPÓSITO", v: profile?.total_deposit },
-            { l: "SALDO", v: profile?.balance },
-            { l: "GANHOS", v: profile?.total_earnings },
-          ].map((s) => (
-            <div key={s.l} className="rounded-xl p-3 bg-card text-center">
-              <div className="text-[10px] text-muted-foreground">{s.l}</div>
-              <div className="text-success font-bold mt-1 text-sm">{Number(s.v ?? 0).toFixed(2)} MZN</div>
-            </div>
-          ))}
-        </div>
-        <div className="grid grid-cols-3 gap-2">
-          <div className="rounded-xl p-3 bg-card text-center">
-            <div className="text-[10px] text-muted-foreground">ÚLTIMO PLANO</div>
-            <div className="text-success font-bold mt-1 text-sm">{profile?.last_plan ?? "Nenhum"}</div>
-          </div>
-          <div className="rounded-xl p-3 bg-card text-center">
-            <div className="text-[10px] text-muted-foreground">RECEITA TOTAL</div>
-            <div className="text-success font-bold mt-1 text-sm">{Number(profile?.total_earnings ?? 0).toFixed(2)} MZN</div>
-          </div>
-          <div className="rounded-xl p-3 bg-card text-center">
-            <div className="text-[10px] text-muted-foreground">CONVITE</div>
-            <div className="text-success font-bold mt-1 text-sm">{Number(profile?.referral_earnings ?? 0).toFixed(2)} MZN</div>
-          </div>
-        </div>
-
-        {/* Menu */}
-        <div className="rounded-2xl bg-card divide-y divide-border/50">
-          {[
-            { i: BarChart3, l: "Depósito Transações", to: "/transactions" },
-            { i: ArrowDownUp, l: "Retiradas Transações", to: "/transactions" },
-            { i: Receipt, l: "Histórico de Investimentos", to: "/transactions" },
-            { i: Share2, l: "Convidar com Código", to: "/referral" },
-          ].map(({ i: I, l, to }) => (
-            <Link key={l} to={to} className="flex items-center gap-3 px-4 py-4">
-              <div className="size-10 rounded-full bg-muted flex items-center justify-center"><I className="size-5" /></div>
-              <div className="flex-1 font-semibold">{l}</div>
-              <ChevronRight className="size-5 text-muted-foreground" />
-            </Link>
-          ))}
-          <button onClick={signOut} className="flex items-center gap-3 px-4 py-4 w-full text-left">
-            <div className="size-10 rounded-full bg-muted flex items-center justify-center"><LogOut className="size-5" /></div>
-            <div className="flex-1 font-semibold">Terminar sessão</div>
-            <ChevronRight className="size-5 text-muted-foreground" />
-          </button>
-        </div>
-
-        {/* Plans */}
-        <div className="pt-2">
+        <div>
           <h2 className="text-xl font-bold mb-3 px-1">Planos de Investimento</h2>
           <div className="space-y-3">
             {plans.map((p) => (
