@@ -29,10 +29,14 @@ function DepositPage() {
   const [senderPhone, setSenderPhone] = useState("");
   const [txnId, setTxnId] = useState("");
   const [loading, setLoading] = useState(false);
+  const [minAmount, setMinAmount] = useState(50);
 
   useEffect(() => {
     supabase.from("payment_accounts").select("*").eq("is_active", true).then(({ data }) => {
       setAccs((data as PayAcc[]) ?? []);
+    });
+    supabase.from("app_settings").select("value").eq("key", "deposit_min").maybeSingle().then(({ data }) => {
+      if (data?.value) setMinAmount(Number(data.value) || 50);
     });
   }, []);
 
@@ -40,7 +44,7 @@ function DepositPage() {
     e.preventDefault();
     if (!selected || !user) return;
     const amt = Number(amount);
-    if (!amt || amt < 50) { toast.error("Valor mínimo: 50 MZN"); return; }
+    if (!amt || amt < minAmount) { toast.error(`Valor mínimo: ${minAmount} MZN`); return; }
     if (!senderPhone.trim() || !txnId.trim()) { toast.error("Preencha número e ID da transação"); return; }
     setLoading(true);
     const { error } = await supabase.from("deposits").insert({
@@ -96,7 +100,8 @@ function DepositPage() {
 
         <div className="space-y-2">
           <Label>Valor depositado (MZN)</Label>
-          <Input value={amount} onChange={(e) => setAmount(e.target.value)} type="number" inputMode="numeric" placeholder="100" className="h-14 rounded-xl bg-card border-0 text-lg" />
+          <Input value={amount} onChange={(e) => setAmount(e.target.value)} type="number" inputMode="numeric" placeholder={String(minAmount)} className="h-14 rounded-xl bg-card border-0 text-lg" />
+          <p className="text-xs text-muted-foreground">Mínimo: {minAmount} MZN</p>
         </div>
         <div className="space-y-2">
           <Label>Número que fez a transferência</Label>
