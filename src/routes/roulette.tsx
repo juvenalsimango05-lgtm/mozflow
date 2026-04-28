@@ -1,0 +1,112 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
+import { AppShell } from "@/components/AppShell";
+import { useAuth } from "@/lib/auth-context";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+
+export const Route = createFileRoute("/roulette")({ component: RoulettePage });
+
+interface Prize { id: string; label: string; amount: number; probability: number; slot_index: number; }
+
+const COLORS = ["#7c3aed", "#06b6d4", "#a855f7", "#10b981", "#f59e0b", "#ef4444", "#3b82f6", "#ec4899"];
+
+function RoulettePage() {
+  const { profile, refresh } = useAuth();
+  const [prizes, setPrizes] = useState<Prize[]>([]);
+  const [maxFree, setMaxFree] = useState(1);
+  const [used, setUsed] = useState(0);
+  const [angle, setAngle] = useState(0);
+  const [spinning, setSpinning] = useState(false);
+  const [last, setLast] = useState<Prize | null>(null);
+  const wheelRef = useRef<HTMLDivElement>(null);
+
+  const load = async () => {
+    if (!profile) return;
+    const today = new Date().toISOString().slice(0, 10);
+    const [{ data: p }, { data: s }, { count }] = await Promise.all([
+      supabase.from("roulette_prizes").select("*").order("slot_index"),
+      supabase.from("app_settings").select("value").eq("key", "roulette_free_spins_per_day").maybeSingle(),
+      supabase.from("roulette_spins").select("id", { count: "exact", head: true }).eq("user_id", profile.id).eq("spun_on", today),
+    ]);
+    setPrizes((p as Prize[]) ?? []);
+    setMaxFree(s ? parseInt(s.value) || 0 : 1);
+    setUsed(count ?? 0);
+  };
+  useEffect(() => { load(); }, [profile]);
+
+  const remaining = Math.max(0, maxFree - used);
+
+  const spin = async () => {
+    if (!profile || prizes.length === 0 || spinning) return;
+    if (remaining <= 0) return toast.error("Sem voltas grátis hoje");
+    setSpinning(true); setLast(null);
+    const total = prizes.reduce((s, p) => s + Number(p.probability), 0);
+    let r = Math.random() * total;
+    let winner = prizes[0];
+    for (const p of prizes) { r -= Number(p.probability); if (r <= 0) { winner = p; break; } }
+
+    const slice = 360 / prizes.length;
+    const target = 360 * 6 + (360 - winner.slot_index * slice - slice / 2);
+    setAngle(target);
+
+    setTimeout(async () => {
+      await supabase.from("roulette_spins").insert({ user_id: profile.id, prize_id: winner.id, amount: winner.amount });
+      if (Number(winner.amount) > 0) {
+        await supabase.from("profiles").update({
+          balance: Number(profile.balance) + Number(winner.amount),
+          total_earnings: Number(profile.total_earnings) + Number(winner.amount),
+        }).eq("id", profile.id);
+      }
+      setLast(winner); setSpinning(false);
+      await refresh(); load();
+    }, 4200);
+  };
+
+  const slice = prizes.length ? 360 / prizes.length : 45;
+
+  return (
+    <AppShell>
+      <div className="px-4 pt-4 space-y-5">
+        <h1 className="text-2xl font-bold text-center">Roleta</h1>
+        <p className="text-center text-sm text-muted-foreground">Voltas grátis hoje: <span className="text-success font-bold">{remaining}</span> / {maxFree}</p>
+
+        <div className="relative mx-auto" style={{ width: 300, height: 300 }}>
+          <div className="absolute -top-2 left-1/2 -translate-x-1/2 z-10 size-0" style={{ borderLeft: "12px solid transparent", borderRight: "12px solid transparent", borderTop: "20px solid hsl(var(--primary))" }} />
+          <div
+            ref={wheelRef}
+            className="size-full rounded-full overflow-hidden border-4 border-primary/50"
+            style={{
+              transition: spinning ? "transform 4s cubic-bezier(.17,.67,.21,.99)" : "none",
+              transform: `rotate(${angle}deg)`,
+              background: prizes.length ? `conic-gradient(${prizes.map((_, i) => `${COLORS[i % 8]} ${i * slice}deg ${(i + 1) * slice}deg`).join(",")})` : "var(--gradient-card)",
+            }}
+          >
+            {prizes.map((p, i) => (
+              <div
+                key={p.id}
+                className="absolute top-1/2 left-1/2 origin-left text-white font-bold text-xs"
+                style={{ transform: `rotate(${i * slice + slice / 2}deg) translateX(60px)` }}
+              >
+                {p.label}
+              </div>
+            ))}
+          </div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-16 rounded-full bg-card flex items-center justify-center font-bold text-xs border-4 border-primary">SPIN</div>
+        </div>
+
+        <Button onClick={spin} disabled={spinning || remaining <= 0} className="w-full rounded-full" style={{ background: "var(--gradient-primary)" }}>
+          {spinning ? "A girar..." : remaining > 0 ? "Girar" : "Sem voltas"}
+        </Button>
+
+        {last && (
+          <div className="rounded-2xl p-5 bg-card text-center">
+            <div className="text-sm text-muted-foreground">Ganhou</div>
+            <div className="text-2xl font-bold text-success">{last.label}</div>
+          </div>
+        )}
+      </div>
+    </AppShell>
+  );
+}

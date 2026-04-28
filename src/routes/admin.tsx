@@ -8,6 +8,10 @@ import { Input } from "@/components/ui/input";
 import { MozFlowLogo } from "@/components/MozFlowLogo";
 import { toast } from "sonner";
 import { Check, X, Shield, ArrowLeft } from "lucide-react";
+import { AdminPlans } from "@/components/admin/AdminPlans";
+import { AdminTasks } from "@/components/admin/AdminTasks";
+import { AdminRoulette } from "@/components/admin/AdminRoulette";
+import { AdminCheckin } from "@/components/admin/AdminCheckin";
 
 export const Route = createFileRoute("/admin")({ component: AdminPage });
 
@@ -95,12 +99,16 @@ function AdminPage() {
 
       <div className="max-w-3xl mx-auto p-4">
         <Tabs defaultValue="dep">
-          <TabsList className="w-full grid grid-cols-5 bg-card">
+          <TabsList className="w-full grid grid-cols-3 sm:grid-cols-9 bg-card h-auto flex-wrap">
             <TabsTrigger value="dep">Depósitos {deps.filter(d => d.status === "pending").length > 0 && <span className="ml-1 text-warning">({deps.filter(d => d.status === "pending").length})</span>}</TabsTrigger>
             <TabsTrigger value="wit">Levantar {wits.filter(d => d.status === "pending").length > 0 && <span className="ml-1 text-warning">({wits.filter(d => d.status === "pending").length})</span>}</TabsTrigger>
             <TabsTrigger value="usr">Utilizadores</TabsTrigger>
             <TabsTrigger value="acc">Contas</TabsTrigger>
             <TabsTrigger value="lnk">Links</TabsTrigger>
+            <TabsTrigger value="pln">Planos</TabsTrigger>
+            <TabsTrigger value="tsk">Tarefas</TabsTrigger>
+            <TabsTrigger value="rlt">Roleta</TabsTrigger>
+            <TabsTrigger value="chk">Pesquisa</TabsTrigger>
           </TabsList>
 
           <TabsContent value="dep" className="space-y-2 mt-3">
@@ -169,6 +177,11 @@ function AdminPage() {
           <TabsContent value="lnk" className="space-y-3 mt-3">
             <SettingsLinks />
           </TabsContent>
+
+          <TabsContent value="pln" className="space-y-3 mt-3"><AdminPlans /></TabsContent>
+          <TabsContent value="tsk" className="space-y-3 mt-3"><AdminTasks /></TabsContent>
+          <TabsContent value="rlt" className="space-y-3 mt-3"><AdminRoulette /></TabsContent>
+          <TabsContent value="chk" className="space-y-3 mt-3"><AdminCheckin /></TabsContent>
         </Tabs>
       </div>
     </div>

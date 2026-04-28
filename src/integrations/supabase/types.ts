@@ -32,6 +32,51 @@ export type Database = {
         }
         Relationships: []
       }
+      checkin_settings: {
+        Row: {
+          day: string
+          is_open: boolean
+          reward: number
+          updated_at: string
+        }
+        Insert: {
+          day: string
+          is_open?: boolean
+          reward?: number
+          updated_at?: string
+        }
+        Update: {
+          day?: string
+          is_open?: boolean
+          reward?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      checkins: {
+        Row: {
+          created_at: string
+          day: string
+          id: string
+          reward: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          day?: string
+          id?: string
+          reward: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          day?: string
+          id?: string
+          reward?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       deposits: {
         Row: {
           admin_note: string | null
@@ -295,6 +340,136 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      roulette_prizes: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          label: string
+          probability: number
+          slot_index: number
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          label: string
+          probability?: number
+          slot_index: number
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          label?: string
+          probability?: number
+          slot_index?: number
+        }
+        Relationships: []
+      }
+      roulette_spins: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          prize_id: string | null
+          spun_on: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          prize_id?: string | null
+          spun_on?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          prize_id?: string | null
+          spun_on?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roulette_spins_prize_id_fkey"
+            columns: ["prize_id"]
+            isOneToOne: false
+            referencedRelation: "roulette_prizes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_claims: {
+        Row: {
+          created_at: string
+          id: string
+          reward: number
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reward: number
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reward?: number
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_claims_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tasks: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          reward: number
+          sort_order: number
+          title: string
+          video_url: string
+          watch_seconds: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          reward?: number
+          sort_order?: number
+          title: string
+          video_url: string
+          watch_seconds?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          reward?: number
+          sort_order?: number
+          title?: string
+          video_url?: string
+          watch_seconds?: number
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {

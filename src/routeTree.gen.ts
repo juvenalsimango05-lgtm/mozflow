@@ -11,11 +11,14 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WithdrawRouteImport } from './routes/withdraw'
 import { Route as TransactionsRouteImport } from './routes/transactions'
+import { Route as TasksRouteImport } from './routes/tasks'
+import { Route as RouletteRouteImport } from './routes/roulette'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ReferralRouteImport } from './routes/referral'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DepositRouteImport } from './routes/deposit'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as CheckinRouteImport } from './routes/checkin'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
@@ -28,6 +31,16 @@ const WithdrawRoute = WithdrawRouteImport.update({
 const TransactionsRoute = TransactionsRouteImport.update({
   id: '/transactions',
   path: '/transactions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TasksRoute = TasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RouletteRoute = RouletteRouteImport.update({
+  id: '/roulette',
+  path: '/roulette',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterRoute = RegisterRouteImport.update({
@@ -55,6 +68,11 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CheckinRoute = CheckinRouteImport.update({
+  id: '/checkin',
+  path: '/checkin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -75,11 +93,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
   '/admin': typeof AdminRoute
+  '/checkin': typeof CheckinRoute
   '/dashboard': typeof DashboardRoute
   '/deposit': typeof DepositRoute
   '/login': typeof LoginRoute
   '/referral': typeof ReferralRoute
   '/register': typeof RegisterRoute
+  '/roulette': typeof RouletteRoute
+  '/tasks': typeof TasksRoute
   '/transactions': typeof TransactionsRoute
   '/withdraw': typeof WithdrawRoute
 }
@@ -87,11 +108,14 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
   '/admin': typeof AdminRoute
+  '/checkin': typeof CheckinRoute
   '/dashboard': typeof DashboardRoute
   '/deposit': typeof DepositRoute
   '/login': typeof LoginRoute
   '/referral': typeof ReferralRoute
   '/register': typeof RegisterRoute
+  '/roulette': typeof RouletteRoute
+  '/tasks': typeof TasksRoute
   '/transactions': typeof TransactionsRoute
   '/withdraw': typeof WithdrawRoute
 }
@@ -100,11 +124,14 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
   '/admin': typeof AdminRoute
+  '/checkin': typeof CheckinRoute
   '/dashboard': typeof DashboardRoute
   '/deposit': typeof DepositRoute
   '/login': typeof LoginRoute
   '/referral': typeof ReferralRoute
   '/register': typeof RegisterRoute
+  '/roulette': typeof RouletteRoute
+  '/tasks': typeof TasksRoute
   '/transactions': typeof TransactionsRoute
   '/withdraw': typeof WithdrawRoute
 }
@@ -114,11 +141,14 @@ export interface FileRouteTypes {
     | '/'
     | '/account'
     | '/admin'
+    | '/checkin'
     | '/dashboard'
     | '/deposit'
     | '/login'
     | '/referral'
     | '/register'
+    | '/roulette'
+    | '/tasks'
     | '/transactions'
     | '/withdraw'
   fileRoutesByTo: FileRoutesByTo
@@ -126,11 +156,14 @@ export interface FileRouteTypes {
     | '/'
     | '/account'
     | '/admin'
+    | '/checkin'
     | '/dashboard'
     | '/deposit'
     | '/login'
     | '/referral'
     | '/register'
+    | '/roulette'
+    | '/tasks'
     | '/transactions'
     | '/withdraw'
   id:
@@ -138,11 +171,14 @@ export interface FileRouteTypes {
     | '/'
     | '/account'
     | '/admin'
+    | '/checkin'
     | '/dashboard'
     | '/deposit'
     | '/login'
     | '/referral'
     | '/register'
+    | '/roulette'
+    | '/tasks'
     | '/transactions'
     | '/withdraw'
   fileRoutesById: FileRoutesById
@@ -151,11 +187,14 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountRoute: typeof AccountRoute
   AdminRoute: typeof AdminRoute
+  CheckinRoute: typeof CheckinRoute
   DashboardRoute: typeof DashboardRoute
   DepositRoute: typeof DepositRoute
   LoginRoute: typeof LoginRoute
   ReferralRoute: typeof ReferralRoute
   RegisterRoute: typeof RegisterRoute
+  RouletteRoute: typeof RouletteRoute
+  TasksRoute: typeof TasksRoute
   TransactionsRoute: typeof TransactionsRoute
   WithdrawRoute: typeof WithdrawRoute
 }
@@ -174,6 +213,20 @@ declare module '@tanstack/react-router' {
       path: '/transactions'
       fullPath: '/transactions'
       preLoaderRoute: typeof TransactionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tasks': {
+      id: '/tasks'
+      path: '/tasks'
+      fullPath: '/tasks'
+      preLoaderRoute: typeof TasksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/roulette': {
+      id: '/roulette'
+      path: '/roulette'
+      fullPath: '/roulette'
+      preLoaderRoute: typeof RouletteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register': {
@@ -211,6 +264,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/checkin': {
+      id: '/checkin'
+      path: '/checkin'
+      fullPath: '/checkin'
+      preLoaderRoute: typeof CheckinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -239,11 +299,14 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountRoute: AccountRoute,
   AdminRoute: AdminRoute,
+  CheckinRoute: CheckinRoute,
   DashboardRoute: DashboardRoute,
   DepositRoute: DepositRoute,
   LoginRoute: LoginRoute,
   ReferralRoute: ReferralRoute,
   RegisterRoute: RegisterRoute,
+  RouletteRoute: RouletteRoute,
+  TasksRoute: TasksRoute,
   TransactionsRoute: TransactionsRoute,
   WithdrawRoute: WithdrawRoute,
 }
