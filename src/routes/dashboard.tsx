@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import { toast } from "sonner";
-import { Plus } from "lucide-react";
+import { Plus, MessageCircle, Users } from "lucide-react";
 import promo247 from "@/assets/promo-247.png";
 import promoSecurity from "@/assets/promo-security.png";
 import promoInvite from "@/assets/promo-invite.jpg";
@@ -25,10 +25,17 @@ function Dashboard() {
   const { profile, refresh } = useAuth();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [investing, setInvesting] = useState<string | null>(null);
+  const [whatsappUrl, setWhatsappUrl] = useState<string>("");
+  const [communityUrl, setCommunityUrl] = useState<string>("");
 
   useEffect(() => {
     supabase.from("plans").select("*").eq("is_active", true).order("sort_order").then(({ data }) => {
       setPlans((data as Plan[]) ?? []);
+    });
+    supabase.from("app_settings").select("key,value").in("key", ["whatsapp_url", "community_url"]).then(({ data }) => {
+      const map = Object.fromEntries((data ?? []).map((r: { key: string; value: string }) => [r.key, r.value]));
+      setWhatsappUrl(map.whatsapp_url ?? "");
+      setCommunityUrl(map.community_url ?? "");
     });
   }, []);
 
@@ -99,6 +106,32 @@ function Dashboard() {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Botões flutuantes */}
+      <div className="fixed right-4 bottom-24 z-40 flex flex-col gap-3">
+        {whatsappUrl && (
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="WhatsApp"
+            className="size-12 rounded-full bg-card border border-border/60 flex items-center justify-center shadow-lg"
+          >
+            <MessageCircle className="size-6 text-success" />
+          </a>
+        )}
+        {communityUrl && (
+          <a
+            href={communityUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Comunidade"
+            className="size-12 rounded-full bg-card border border-border/60 flex items-center justify-center shadow-lg"
+          >
+            <Users className="size-6 text-success" />
+          </a>
+        )}
       </div>
     </AppShell>
   );

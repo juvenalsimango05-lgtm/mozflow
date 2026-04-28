@@ -95,11 +95,12 @@ function AdminPage() {
 
       <div className="max-w-3xl mx-auto p-4">
         <Tabs defaultValue="dep">
-          <TabsList className="w-full grid grid-cols-4 bg-card">
+          <TabsList className="w-full grid grid-cols-5 bg-card">
             <TabsTrigger value="dep">Depósitos {deps.filter(d => d.status === "pending").length > 0 && <span className="ml-1 text-warning">({deps.filter(d => d.status === "pending").length})</span>}</TabsTrigger>
             <TabsTrigger value="wit">Levantar {wits.filter(d => d.status === "pending").length > 0 && <span className="ml-1 text-warning">({wits.filter(d => d.status === "pending").length})</span>}</TabsTrigger>
             <TabsTrigger value="usr">Utilizadores</TabsTrigger>
             <TabsTrigger value="acc">Contas</TabsTrigger>
+            <TabsTrigger value="lnk">Links</TabsTrigger>
           </TabsList>
 
           <TabsContent value="dep" className="space-y-2 mt-3">
@@ -164,6 +165,10 @@ function AdminPage() {
               </div>
             ))}
           </TabsContent>
+
+          <TabsContent value="lnk" className="space-y-3 mt-3">
+            <SettingsLinks />
+          </TabsContent>
         </Tabs>
       </div>
     </div>
@@ -213,6 +218,45 @@ function AddAccountForm({ onAdd }: { onAdd: (m: string, n: string, name: string)
       <Input value={num} onChange={(e) => setNum(e.target.value)} placeholder="Número" className="bg-muted border-0" />
       <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nome (opcional)" className="bg-muted border-0" />
       <Button size="sm" onClick={() => { onAdd(method, num, name); setNum(""); setName(""); }} className="w-full">Adicionar</Button>
+    </div>
+  );
+}
+
+function SettingsLinks() {
+  const [whatsapp, setWhatsapp] = useState("");
+  const [community, setCommunity] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.from("app_settings").select("key,value").in("key", ["whatsapp_url", "community_url"]).then(({ data }) => {
+      const map = Object.fromEntries((data ?? []).map((r: { key: string; value: string }) => [r.key, r.value]));
+      setWhatsapp(map.whatsapp_url ?? "");
+      setCommunity(map.community_url ?? "");
+      setLoading(false);
+    });
+  }, []);
+
+  const save = async (key: string, value: string) => {
+    const { error } = await supabase.from("app_settings").upsert({ key, value, updated_at: new Date().toISOString() });
+    if (error) { toast.error(error.message); return; }
+    toast.success("Link guardado");
+  };
+
+  if (loading) return <div className="text-sm text-muted-foreground">A carregar...</div>;
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-xl p-4 bg-card space-y-2">
+        <div className="font-bold text-sm">Botão WhatsApp (em cima)</div>
+        <Input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="https://wa.me/258..." className="bg-muted border-0" />
+        <Button size="sm" onClick={() => save("whatsapp_url", whatsapp.trim())} className="w-full">Guardar</Button>
+      </div>
+      <div className="rounded-xl p-4 bg-card space-y-2">
+        <div className="font-bold text-sm">Botão Comunidade (em baixo)</div>
+        <Input value={community} onChange={(e) => setCommunity(e.target.value)} placeholder="https://chat.whatsapp.com/..." className="bg-muted border-0" />
+        <Button size="sm" onClick={() => save("community_url", community.trim())} className="w-full">Guardar</Button>
+      </div>
+      <p className="text-xs text-muted-foreground">Deixe vazio para esconder o botão da home.</p>
     </div>
   );
 }
