@@ -11,7 +11,6 @@ import { toast } from "sonner";
 import { Plus, MessageCircle, Users, PlaySquare, Sparkles, Gift } from "lucide-react";
 import promo247 from "@/assets/promo-247.png";
 import promoSecurity from "@/assets/promo-security.png";
-import promoInvite from "@/assets/promo-invite.jpg";
 import carTesla from "@/assets/car-tesla.jpg";
 
 export const Route = createFileRoute("/dashboard")({ component: Dashboard });
@@ -21,7 +20,7 @@ interface Plan {
   daily_return: number; duration_days: number; net_profit: number;
 }
 
-const SLIDES = [promo247, promoInvite, promoSecurity];
+const SLIDES = [promo247, promoSecurity];
 
 interface SlideRow { image_url: string; link_url: string; }
 
