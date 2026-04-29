@@ -35,9 +35,13 @@ export const Route = createRootRoute({
       { title: "MozFlow — Investimentos 24/24" },
       { name: "description", content: "Invista, levante e ganhe a cada hora. Plataforma de investimentos rápidos, segura e sem limites." },
       { property: "og:title", content: "MozFlow — Investimentos 24/24" },
-      { property: "og:description", content: "Invista, levante e ganhe a cada hora. Plataforma de investimentos rápidos." },
+      { property: "og:description", content: "Invista, levante e ganhe a cada hora. Plataforma de investimentos rápidos, segura e sem limites." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "MozFlow — Investimentos 24/24" },
+      { name: "twitter:description", content: "Invista, levante e ganhe a cada hora. Plataforma de investimentos rápidos, segura e sem limites." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/daf86fdc-c1c9-4b11-a9f0-c0db2ed3b2e2/id-preview-ba0a6df9--8f74588b-c27a-41d6-b662-6ed659524f9d.lovable.app-1777440071001.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/daf86fdc-c1c9-4b11-a9f0-c0db2ed3b2e2/id-preview-ba0a6df9--8f74588b-c27a-41d6-b662-6ed659524f9d.lovable.app-1777440071001.png" },
     ],
     links: [
       {
