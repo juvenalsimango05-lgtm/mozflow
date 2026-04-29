@@ -12,6 +12,7 @@ import { Plus, MessageCircle, Users, PlaySquare, Sparkles, Gift } from "lucide-r
 import promo247 from "@/assets/promo-247.png";
 import promoSecurity from "@/assets/promo-security.png";
 import promoInvite from "@/assets/promo-invite.jpg";
+import carTesla from "@/assets/car-tesla.jpg";
 
 export const Route = createFileRoute("/dashboard")({ component: Dashboard });
 
@@ -131,8 +132,8 @@ function Dashboard() {
           <div className="space-y-3">
             {plans.map((p) => (
               <div key={p.id} className="rounded-2xl p-4 flex gap-4" style={{ background: "var(--gradient-card)", boxShadow: "var(--shadow-card)" }}>
-                <div className="size-24 rounded-xl bg-white flex items-center justify-center text-3xl font-bold text-foreground">
-                  🚗
+                <div className="size-24 rounded-xl bg-white flex items-center justify-center overflow-hidden">
+                  <img src={carTesla} alt="Tesla" className="w-full h-full object-contain" />
                 </div>
                 <div className="flex-1">
                   <div className="text-2xl font-bold">{p.code}</div>
