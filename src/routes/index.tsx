@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { MozFlowLogo } from "@/components/MozFlowLogo";
 import { useAuth } from "@/lib/auth-context";
 import { Infinity as InfIcon, Clock, CalendarDays, ShieldCheck, TrendingUp, Wallet } from "lucide-react";
+import carImage from "@/assets/car-tesla.jpg";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -40,18 +41,8 @@ function Index() {
           <Link to="/login"><Button size="lg" variant="outline" className="rounded-full px-8">Já tenho conta</Button></Link>
         </div>
 
-        <div className="mt-10 grid grid-cols-3 gap-3 text-left">
-          {[
-            { icon: Clock, t: "24/7", s: "Funciona todos os dias" },
-            { icon: InfIcon, t: "Sem limites", s: "Invista o que quiser" },
-            { icon: CalendarDays, t: "7 dias", s: "Levantamentos por semana" },
-          ].map(({ icon: I, t, s }) => (
-            <div key={t} className="rounded-2xl p-4 border border-border/50" style={{ background: "var(--gradient-card)" }}>
-              <I className="size-5 text-primary mb-2" />
-              <div className="font-semibold text-sm">{t}</div>
-              <div className="text-xs text-muted-foreground">{s}</div>
-            </div>
-          ))}
+        <div className="mt-10 rounded-2xl overflow-hidden border border-border/50" style={{ background: "var(--gradient-card)" }}>
+          <img src={carImage} alt="Carro Tesla branco" className="w-full h-auto object-contain" />
         </div>
 
         <div className="mt-10 grid sm:grid-cols-3 gap-4">
