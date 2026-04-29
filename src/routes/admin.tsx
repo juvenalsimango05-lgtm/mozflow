@@ -18,7 +18,7 @@ import { AdminSlides } from "@/components/admin/AdminSlides";
 export const Route = createFileRoute("/admin")({ component: AdminPage });
 
 function AdminPage() {
-  const { user, isAdmin, loading } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [deps, setDeps] = useState<any[]>([]);
   const [wits, setWits] = useState<any[]>([]);
@@ -36,9 +36,8 @@ function AdminPage() {
   }, []);
 
   useEffect(() => {
-    if (!loading && (!user || !isAdmin)) navigate({ to: "/dashboard" });
-    if (isAdmin) load();
-  }, [user, isAdmin, loading, navigate, load]);
+    load();
+  }, [load]);
 
   const approveDeposit = async (d: any) => {
     const { error } = await supabase.from("deposits").update({ status: "approved", reviewed_by: user!.id, reviewed_at: new Date().toISOString() }).eq("id", d.id).eq("status", "pending");
@@ -112,7 +111,7 @@ function AdminPage() {
     await supabase.from("payment_accounts").update({ is_active: !active }).eq("id", id); load();
   };
 
-  if (loading || !isAdmin) return <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">A verificar...</div>;
+  if (loading) return <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">A verificar...</div>;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
