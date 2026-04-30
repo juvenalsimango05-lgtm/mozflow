@@ -16,8 +16,12 @@ function LoginPage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const cleanPhone = phone.replace(/\D/g, "");
+    if (cleanPhone.length !== 9) {
+      toast.error("O número de telefone deve ter exatamente 9 dígitos.");
+      return;
+    }
     setLoading(true);
-    const cleanPhone = phone.replace(/\s+/g, "");
     const { error } = await supabase.auth.signInWithPassword({
       email: `${cleanPhone}@mozflow.app`,
       password,
