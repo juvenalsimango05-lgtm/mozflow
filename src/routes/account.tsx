@@ -3,7 +3,7 @@ import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Copy, BarChart3, ArrowDownUp, Receipt, Share2, LogOut, ChevronRight, Shield } from "lucide-react";
+import { Copy, BarChart3, ArrowDownUp, Receipt, Share2, LogOut, ChevronRight } from "lucide-react";
 
 export const Route = createFileRoute("/account")({ component: AccountPage });
 
@@ -81,11 +81,6 @@ function AccountPage() {
               <ChevronRight className="size-5 text-muted-foreground" />
             </Link>
           ))}
-          <Link to="/admin" className="flex items-center gap-3 px-4 py-4">
-            <div className="size-10 rounded-full bg-muted flex items-center justify-center"><Shield className="size-5 text-primary" /></div>
-            <div className="flex-1 font-semibold">Painel de administrador</div>
-            <ChevronRight className="size-5 text-muted-foreground" />
-          </Link>
           <button onClick={signOut} className="flex items-center gap-3 px-4 py-4 w-full text-left">
             <div className="size-10 rounded-full bg-muted flex items-center justify-center"><LogOut className="size-5" /></div>
             <div className="flex-1 font-semibold">Terminar sessão</div>
