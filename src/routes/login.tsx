@@ -16,8 +16,12 @@ function LoginPage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const cleanPhone = phone.replace(/\D/g, "");
+    if (cleanPhone.length !== 9) {
+      toast.error("O número de telefone deve ter exatamente 9 dígitos.");
+      return;
+    }
     setLoading(true);
-    const cleanPhone = phone.replace(/\s+/g, "");
     const { error } = await supabase.auth.signInWithPassword({
       email: `${cleanPhone}@mozflow.app`,
       password,
@@ -36,7 +40,7 @@ function LoginPage() {
       <MozFlowLogo className="text-2xl mx-auto mb-12" />
       <h1 className="text-3xl font-bold mb-8">Entrar</h1>
       <form onSubmit={submit} className="space-y-4">
-        <Input placeholder="Número de telefone" value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" className="h-14 rounded-xl bg-card border-0" />
+        <Input placeholder="Número de telefone (9 dígitos)" value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 9))} inputMode="numeric" maxLength={9} className="h-14 rounded-xl bg-card border-0" />
         <Input placeholder="Senha" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-14 rounded-xl bg-card border-0" />
         <Button type="submit" disabled={loading} className="w-full h-14 rounded-full text-base font-semibold mt-4" style={{ background: "var(--gradient-primary)" }}>
           {loading ? "A entrar..." : "ENTRAR"}

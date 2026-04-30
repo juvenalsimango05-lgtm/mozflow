@@ -22,12 +22,16 @@ function RegisterPage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !phone.trim() || password.length < 6) {
+    const cleanPhone = phone.replace(/\D/g, "");
+    if (!name.trim() || password.length < 6) {
       toast.error("Preencha todos os campos. Senha mínima 6 caracteres.");
       return;
     }
+    if (cleanPhone.length !== 9) {
+      toast.error("O número de telefone deve ter exatamente 9 dígitos.");
+      return;
+    }
     setLoading(true);
-    const cleanPhone = phone.replace(/\s+/g, "");
     const email = `${cleanPhone}@mozflow.app`;
     const { error } = await supabase.auth.signUp({
       email,
@@ -52,7 +56,7 @@ function RegisterPage() {
       <h1 className="text-3xl font-bold mb-8">Criar uma conta</h1>
       <form onSubmit={submit} className="space-y-4">
         <Input placeholder="Nome completo" value={name} onChange={(e) => setName(e.target.value)} className="h-14 rounded-xl bg-card border-0" />
-        <Input placeholder="Número de telefone" value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" className="h-14 rounded-xl bg-card border-0" />
+        <Input placeholder="Número de telefone (9 dígitos)" value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 9))} inputMode="numeric" maxLength={9} className="h-14 rounded-xl bg-card border-0" />
         <Input placeholder="Senha" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-14 rounded-xl bg-card border-0" />
         <Input placeholder="Código de convite (opcional)" value={referral} onChange={(e) => setReferral(e.target.value)} className="h-14 rounded-xl bg-card border-0" />
         <Button type="submit" disabled={loading} className="w-full h-14 rounded-full text-base font-semibold mt-4" style={{ background: "var(--gradient-primary)" }}>
