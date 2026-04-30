@@ -22,12 +22,16 @@ function RegisterPage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !phone.trim() || password.length < 6) {
+    const cleanPhone = phone.replace(/\D/g, "");
+    if (!name.trim() || password.length < 6) {
       toast.error("Preencha todos os campos. Senha mínima 6 caracteres.");
       return;
     }
+    if (cleanPhone.length !== 9) {
+      toast.error("O número de telefone deve ter exatamente 9 dígitos.");
+      return;
+    }
     setLoading(true);
-    const cleanPhone = phone.replace(/\s+/g, "");
     const email = `${cleanPhone}@mozflow.app`;
     const { error } = await supabase.auth.signUp({
       email,
