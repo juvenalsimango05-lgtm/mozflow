@@ -26,18 +26,24 @@ function TasksPage() {
   const { profile, refresh } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [claimed, setClaimed] = useState<Set<string>>(new Set());
+  const [claimedToday, setClaimedToday] = useState(0);
   const [active, setActive] = useState<Task | null>(null);
   const [seconds, setSeconds] = useState(0);
   const [claiming, setClaiming] = useState(false);
+  const DAILY_LIMIT = 3;
 
   const load = async () => {
     if (!profile) return;
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
     const [{ data: t }, { data: c }] = await Promise.all([
       supabase.from("tasks").select("*").eq("is_active", true).order("created_at"),
-      supabase.from("task_claims").select("task_id").eq("user_id", profile.id),
+      supabase.from("task_claims").select("task_id, created_at").eq("user_id", profile.id),
     ]);
     setTasks((t as Task[]) ?? []);
-    setClaimed(new Set((c ?? []).map((x: { task_id: string }) => x.task_id)));
+    const all = (c ?? []) as { task_id: string; created_at: string }[];
+    setClaimed(new Set(all.map((x) => x.task_id)));
+    setClaimedToday(all.filter((x) => new Date(x.created_at) >= startOfDay).length);
   };
   useEffect(() => { load(); }, [profile]);
 
@@ -51,6 +57,11 @@ function TasksPage() {
   const claim = async () => {
     if (!active || !profile) return;
     if (seconds < active.watch_seconds) return toast.error("Continue a assistir");
+    if (claimedToday >= DAILY_LIMIT) {
+      toast.error("Já assististe 3 vídeos hoje. Volta amanhã!");
+      setActive(null);
+      return;
+    }
     setClaiming(true);
     const { error } = await supabase.from("task_claims").insert({ user_id: profile.id, task_id: active.id, reward: active.reward });
     if (error) { toast.error(error.message); setClaiming(false); return; }
@@ -64,15 +75,21 @@ function TasksPage() {
   };
 
   const embed = active ? youtubeEmbed(active.video_url) : null;
+  const limitReached = claimedToday >= DAILY_LIMIT;
 
   return (
     <AppShell>
       <div className="px-4 pt-4 space-y-4">
         <h1 className="text-2xl font-bold">Tarefas</h1>
-        <p className="text-sm text-muted-foreground">Assista vídeos e ganhe recompensas.</p>
+        <p className="text-sm text-muted-foreground">Assista vídeos e ganhe recompensas. Máximo 3 por dia.</p>
+        <div className={`rounded-xl p-3 text-sm font-bold text-center ${limitReached ? "bg-destructive/10 text-destructive" : "bg-card"}`}>
+          Hoje: {claimedToday} / {DAILY_LIMIT} vídeos
+          {limitReached && <div className="text-xs font-normal mt-1">Volta amanhã para mais recompensas</div>}
+        </div>
         {tasks.length === 0 && <div className="text-sm text-muted-foreground text-center py-8">Sem tarefas disponíveis no momento.</div>}
         {tasks.map((t) => {
           const done = claimed.has(t.id);
+          const disabled = done || limitReached;
           return (
             <div key={t.id} className="rounded-2xl p-4 bg-card flex items-center gap-3">
               <div className="size-12 rounded-full bg-muted flex items-center justify-center">
@@ -82,7 +99,9 @@ function TasksPage() {
                 <div className="font-bold truncate">{t.title}</div>
                 <div className="text-xs text-success">+{t.reward} MZN · {t.watch_seconds}s</div>
               </div>
-              <Button size="sm" disabled={done} onClick={() => setActive(t)}>{done ? "Feito" : "Assistir"}</Button>
+              <Button size="sm" disabled={disabled} onClick={() => setActive(t)}>
+                {done ? "Feito" : limitReached ? "Limite" : "Assistir"}
+              </Button>
             </div>
           );
         })}
