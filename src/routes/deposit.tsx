@@ -109,7 +109,7 @@ function DepositPage() {
         </div>
         <div className="space-y-2">
           <Label>ID da transação (SMS de confirmação)</Label>
-          <Input value={txnId} onChange={(e) => setTxnId(e.target.value)} placeholder="Ex: CG93.XXXX.YY" className="h-14 rounded-xl bg-card border-0" />
+          <Input value={txnId} onChange={(e) => setTxnId(e.target.value)} placeholder="Ex: ID DA TRANSACAO/CONFIRMADO" className="h-14 rounded-xl bg-card border-0" />
         </div>
 
         <div className="flex gap-2 pt-2">
