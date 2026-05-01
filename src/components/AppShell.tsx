@@ -2,10 +2,10 @@ import { type ReactNode, useEffect } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-context";
 import { MozFlowLogo } from "@/components/MozFlowLogo";
-import { Home, Wallet, ArrowDownToLine, Users, Shield, User } from "lucide-react";
+import { Home, Wallet, ArrowDownToLine, Users, User } from "lucide-react";
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { user, loading, isAdmin } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const path = useRouterState({ select: (s) => s.location.pathname });
 
@@ -30,11 +30,6 @@ export function AppShell({ children }: { children: ReactNode }) {
       <header className="flex items-center justify-between px-5 py-4 border-b border-border/50 sticky top-0 bg-background/80 backdrop-blur z-20">
         <Link to="/dashboard"><MozFlowLogo className="text-xl" /></Link>
         <div className="flex items-center gap-3">
-          {isAdmin && (
-            <Link to="/admin" className="flex items-center gap-1 text-xs text-warning font-semibold">
-              <Shield className="size-4" /> Admin
-            </Link>
-          )}
           <Link to="/account" aria-label="Conta" className="size-9 rounded-full bg-card flex items-center justify-center border border-border/50">
             <User className="size-5" />
           </Link>
