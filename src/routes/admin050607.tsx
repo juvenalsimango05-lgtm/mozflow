@@ -27,8 +27,8 @@ function AdminPage() {
 
   const load = useCallback(async () => {
     const [d, w, u, a] = await Promise.all([
-      supabase.from("deposits").select("*, profiles(name, phone)").order("created_at", { ascending: false }),
-      supabase.from("withdrawals").select("*, profiles(name, phone)").order("created_at", { ascending: false }),
+      supabase.from("deposits").select("*, profiles!deposits_user_id_profile_fkey(name, phone)").order("created_at", { ascending: false }),
+      supabase.from("withdrawals").select("*, profiles!withdrawals_user_id_profile_fkey(name, phone)").order("created_at", { ascending: false }),
       supabase.from("profiles").select("*").order("created_at", { ascending: false }).limit(200),
       supabase.from("payment_accounts").select("*").order("created_at"),
     ]);
