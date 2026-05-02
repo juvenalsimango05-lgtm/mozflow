@@ -15,7 +15,7 @@ import { AdminCheckin } from "@/components/admin/AdminCheckin";
 import { AdminGeneral } from "@/components/admin/AdminGeneral";
 import { AdminSlides } from "@/components/admin/AdminSlides";
 
-export const Route = createFileRoute("/admin")({ component: AdminPage });
+export const Route = createFileRoute("/admin050607")({ component: AdminPage });
 
 function AdminPage() {
   const { user, loading } = useAuth();
