@@ -62,7 +62,7 @@ function CheckinPage() {
             </div>
           ) : (
             <div className="mt-4">
-              <div className="text-3xl font-bold text-success">+{setting.reward} MZN</div>
+              <div className="text-3xl font-bold text-success">+{reward} MZN</div>
               <div className="text-sm text-muted-foreground mt-1">Recompensa de hoje</div>
               <Button onClick={claim} disabled={claiming} className="mt-4 w-full rounded-full" style={{ background: "var(--gradient-primary)" }}>
                 {claiming ? "..." : "Receber"}
