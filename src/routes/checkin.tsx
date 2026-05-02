@@ -12,7 +12,8 @@ export const Route = createFileRoute("/checkin")({ component: CheckinPage });
 function CheckinPage() {
   const { profile, refresh } = useAuth();
   const today = new Date().toISOString().slice(0, 10);
-  const [setting, setSetting] = useState<{ reward: number; is_open: boolean } | null>(null);
+  const DEFAULT_REWARD = 10;
+  const [reward, setReward] = useState(DEFAULT_REWARD);
   const [done, setDone] = useState(false);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(false);
@@ -24,22 +25,23 @@ function CheckinPage() {
       supabase.from("checkin_settings").select("reward, is_open").eq("day", today).maybeSingle(),
       supabase.from("checkins").select("id").eq("user_id", profile.id).eq("day", today).maybeSingle(),
     ]);
-    setSetting(s as any);
+    // Use admin-configured reward if exists, otherwise default
+    setReward(s ? Number(s.reward) : DEFAULT_REWARD);
     setDone(!!c);
     setLoading(false);
   };
   useEffect(() => { load(); }, [profile]);
 
   const claim = async () => {
-    if (!profile || !setting?.is_open) return;
+    if (!profile) return;
     setClaiming(true);
-    const { error } = await supabase.from("checkins").insert({ user_id: profile.id, day: today, reward: setting.reward });
+    const { error } = await supabase.from("checkins").insert({ user_id: profile.id, day: today, reward });
     if (error) { toast.error(error.message); setClaiming(false); return; }
     await supabase.from("profiles").update({
-      balance: Number(profile.balance) + Number(setting.reward),
-      total_earnings: Number(profile.total_earnings) + Number(setting.reward),
+      balance: Number(profile.balance) + reward,
+      total_earnings: Number(profile.total_earnings) + reward,
     }).eq("id", profile.id);
-    toast.success(`+${setting.reward} MZN!`);
+    toast.success(`+${reward} MZN!`);
     setClaiming(false); await refresh(); load();
   };
 
@@ -53,11 +55,6 @@ function CheckinPage() {
           <Gift className="size-16 mx-auto text-primary" />
           {loading ? (
             <div className="mt-4 text-muted-foreground">A carregar...</div>
-          ) : !setting || !setting.is_open ? (
-            <div className="mt-4">
-              <div className="text-lg font-bold">Pesquisa fechada</div>
-              <div className="text-sm text-muted-foreground">Volte amanhã.</div>
-            </div>
           ) : done ? (
             <div className="mt-4">
               <div className="text-lg font-bold text-success">Já reivindicado hoje ✓</div>
@@ -65,7 +62,7 @@ function CheckinPage() {
             </div>
           ) : (
             <div className="mt-4">
-              <div className="text-3xl font-bold text-success">+{setting.reward} MZN</div>
+              <div className="text-3xl font-bold text-success">+{reward} MZN</div>
               <div className="text-sm text-muted-foreground mt-1">Recompensa de hoje</div>
               <Button onClick={claim} disabled={claiming} className="mt-4 w-full rounded-full" style={{ background: "var(--gradient-primary)" }}>
                 {claiming ? "..." : "Receber"}
