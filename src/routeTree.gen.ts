@@ -19,7 +19,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as DepositRouteImport } from './routes/deposit'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CheckinRouteImport } from './routes/checkin'
-import { Route as AdminRouteImport } from './routes/admin'
+import { Route as Admin050607RouteImport } from './routes/admin050607'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -73,9 +73,9 @@ const CheckinRoute = CheckinRouteImport.update({
   path: '/checkin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
+const Admin050607Route = Admin050607RouteImport.update({
+  id: '/admin050607',
+  path: '/admin050607',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AccountRoute = AccountRouteImport.update({
@@ -92,7 +92,7 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
-  '/admin': typeof AdminRoute
+  '/admin050607': typeof Admin050607Route
   '/checkin': typeof CheckinRoute
   '/dashboard': typeof DashboardRoute
   '/deposit': typeof DepositRoute
@@ -107,7 +107,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
-  '/admin': typeof AdminRoute
+  '/admin050607': typeof Admin050607Route
   '/checkin': typeof CheckinRoute
   '/dashboard': typeof DashboardRoute
   '/deposit': typeof DepositRoute
@@ -123,7 +123,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
-  '/admin': typeof AdminRoute
+  '/admin050607': typeof Admin050607Route
   '/checkin': typeof CheckinRoute
   '/dashboard': typeof DashboardRoute
   '/deposit': typeof DepositRoute
@@ -140,7 +140,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/account'
-    | '/admin'
+    | '/admin050607'
     | '/checkin'
     | '/dashboard'
     | '/deposit'
@@ -155,7 +155,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/account'
-    | '/admin'
+    | '/admin050607'
     | '/checkin'
     | '/dashboard'
     | '/deposit'
@@ -170,7 +170,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/account'
-    | '/admin'
+    | '/admin050607'
     | '/checkin'
     | '/dashboard'
     | '/deposit'
@@ -186,7 +186,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountRoute: typeof AccountRoute
-  AdminRoute: typeof AdminRoute
+  Admin050607Route: typeof Admin050607Route
   CheckinRoute: typeof CheckinRoute
   DashboardRoute: typeof DashboardRoute
   DepositRoute: typeof DepositRoute
@@ -271,11 +271,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckinRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
+    '/admin050607': {
+      id: '/admin050607'
+      path: '/admin050607'
+      fullPath: '/admin050607'
+      preLoaderRoute: typeof Admin050607RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/account': {
@@ -298,7 +298,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountRoute: AccountRoute,
-  AdminRoute: AdminRoute,
+  Admin050607Route: Admin050607Route,
   CheckinRoute: CheckinRoute,
   DashboardRoute: DashboardRoute,
   DepositRoute: DepositRoute,
