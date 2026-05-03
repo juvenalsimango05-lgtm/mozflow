@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth-context";
-import { supabase } from "@/integrations/supabase/client";
+import { queryDocs, getSetting, addDoc, collection, db, doc, updateDoc } from "@/lib/firestore-helpers";
+import { where, orderBy } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -25,14 +26,14 @@ function RoulettePage() {
   const load = async () => {
     if (!profile) return;
     const today = new Date().toISOString().slice(0, 10);
-    const [{ data: p }, { data: s }, { count }] = await Promise.all([
-      supabase.from("roulette_prizes").select("*").order("slot_index"),
-      supabase.from("app_settings").select("value").eq("key", "roulette_free_spins_per_day").maybeSingle(),
-      supabase.from("roulette_spins").select("id", { count: "exact", head: true }).eq("user_id", profile.id).eq("spun_on", today),
+    const [p, sv, spins] = await Promise.all([
+      queryDocs<Prize>("roulette_prizes", orderBy("slot_index")),
+      getSetting("roulette_free_spins_per_day"),
+      queryDocs("roulette_spins", where("user_id", "==", profile.id), where("spun_on", "==", today)),
     ]);
-    setPrizes((p as Prize[]) ?? []);
-    setMaxFree(s ? parseInt(s.value) || 0 : 1);
-    setUsed(count ?? 0);
+    setPrizes(p);
+    setMaxFree(sv ? parseInt(sv) || 0 : 1);
+    setUsed(spins.length);
   };
   useEffect(() => { load(); }, [profile]);
 
@@ -57,12 +58,12 @@ function RoulettePage() {
     setAngle(target);
 
     setTimeout(async () => {
-      await supabase.from("roulette_spins").insert({ user_id: profile.id, prize_id: winner.id, amount: winner.amount });
+      await addDoc(collection(db, "roulette_spins"), { user_id: profile.id, prize_id: winner.id, amount: winner.amount, spun_on: new Date().toISOString().slice(0, 10), created_at: new Date().toISOString() });
       if (Number(winner.amount) > 0) {
-        await supabase.from("profiles").update({
+        await updateDoc(doc(db, "profiles", profile.id), {
           balance: Number(profile.balance) + Number(winner.amount),
           total_earnings: Number(profile.total_earnings) + Number(winner.amount),
-        }).eq("id", profile.id);
+        });
       }
       setLast(winner); setSpinning(false);
       await refresh(); load();
