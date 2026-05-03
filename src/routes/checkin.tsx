@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth-context";
-import { supabase } from "@/integrations/supabase/client";
+import { db, doc, getDoc, addDoc, updateDoc, collection, queryDocs } from "@/lib/firestore-helpers";
+import { where } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Gift } from "lucide-react";
@@ -21,13 +22,12 @@ function CheckinPage() {
   const load = async () => {
     if (!profile) return;
     setLoading(true);
-    const [{ data: s }, { data: c }] = await Promise.all([
-      supabase.from("checkin_settings").select("reward, is_open").eq("day", today).maybeSingle(),
-      supabase.from("checkins").select("id").eq("user_id", profile.id).eq("day", today).maybeSingle(),
+    const [settSnap, checkins] = await Promise.all([
+      getDoc(doc(db, "checkin_settings", today)),
+      queryDocs("checkins", where("user_id", "==", profile.id), where("day", "==", today)),
     ]);
-    // Use admin-configured reward if exists, otherwise default
-    setReward(s ? Number(s.reward) : DEFAULT_REWARD);
-    setDone(!!c);
+    setReward(settSnap.exists() ? Number(settSnap.data().reward) : DEFAULT_REWARD);
+    setDone(checkins.length > 0);
     setLoading(false);
   };
   useEffect(() => { load(); }, [profile]);
@@ -35,14 +35,19 @@ function CheckinPage() {
   const claim = async () => {
     if (!profile) return;
     setClaiming(true);
-    const { error } = await supabase.from("checkins").insert({ user_id: profile.id, day: today, reward });
-    if (error) { toast.error(error.message); setClaiming(false); return; }
-    await supabase.from("profiles").update({
-      balance: Number(profile.balance) + reward,
-      total_earnings: Number(profile.total_earnings) + reward,
-    }).eq("id", profile.id);
-    toast.success(`+${reward} MZN!`);
-    setClaiming(false); await refresh(); load();
+    try {
+      await addDoc(collection(db, "checkins"), { user_id: profile.id, day: today, reward, created_at: new Date().toISOString() });
+      await updateDoc(doc(db, "profiles", profile.id), {
+        balance: Number(profile.balance) + reward,
+        total_earnings: Number(profile.total_earnings) + reward,
+      });
+      toast.success(`+${reward} MZN!`);
+      await refresh(); load();
+    } catch (err: any) {
+      toast.error(err?.message ?? "Erro");
+    } finally {
+      setClaiming(false);
+    }
   };
 
   return (
