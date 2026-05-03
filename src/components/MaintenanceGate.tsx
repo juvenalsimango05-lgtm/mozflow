@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { getSettings } from "@/lib/firestore-helpers";
 import { useAuth } from "@/lib/auth-context";
 import { Wrench } from "lucide-react";
 import { MozFlowLogo } from "@/components/MozFlowLogo";
@@ -11,14 +11,11 @@ export function MaintenanceGate({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    supabase.from("app_settings").select("key,value")
-      .in("key", ["maintenance_enabled", "maintenance_message"])
-      .then(({ data }) => {
-        const m = Object.fromEntries((data ?? []).map((r: { key: string; value: string }) => [r.key, r.value]));
-        setEnabled(m.maintenance_enabled === "true");
-        setMsg(m.maintenance_message ?? "A app está em manutenção.");
-        setReady(true);
-      });
+    getSettings(["maintenance_enabled", "maintenance_message"]).then(m => {
+      setEnabled(m.maintenance_enabled === "true");
+      setMsg(m.maintenance_message ?? "A app está em manutenção.");
+      setReady(true);
+    });
   }, []);
 
   if (!ready || loading) return <>{children}</>;
