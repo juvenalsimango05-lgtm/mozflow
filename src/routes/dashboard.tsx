@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import Autoplay from "embla-carousel-autoplay";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth-context";
-import { supabase } from "@/integrations/supabase/client";
+import { queryDocs, getSettings, addDoc, collection, db, doc, updateDoc } from "@/lib/firestore-helpers";
+import { where, orderBy } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import { Link } from "@tanstack/react-router";
@@ -33,21 +34,16 @@ function Dashboard() {
   const [slides, setSlides] = useState<SlideRow[]>([]);
 
   useEffect(() => {
-    supabase.from("plans").select("*").eq("is_active", true).order("sort_order").then(({ data }) => {
-      setPlans((data as Plan[]) ?? []);
+    queryDocs<Plan>("plans", where("is_active", "==", true), orderBy("sort_order")).then(setPlans);
+    getSettings(["whatsapp_url", "community_url"]).then(m => {
+      setWhatsappUrl(m.whatsapp_url ?? "");
+      setCommunityUrl(m.community_url ?? "");
     });
-    supabase.from("app_settings").select("key,value").in("key", ["whatsapp_url", "community_url"]).then(({ data }) => {
-      const map = Object.fromEntries((data ?? []).map((r: { key: string; value: string }) => [r.key, r.value]));
-      setWhatsappUrl(map.whatsapp_url ?? "");
-      setCommunityUrl(map.community_url ?? "");
-    });
-    supabase.from("home_slides").select("image_url,link_url,is_active,slot").eq("is_active", true).order("slot").then(({ data }) => {
-      const rows = (data ?? []).filter((r: any) => r.image_url) as SlideRow[];
-      setSlides(rows);
+    queryDocs("home_slides", where("is_active", "==", true), orderBy("slot")).then(rows => {
+      setSlides(rows.filter((r: any) => r.image_url) as SlideRow[]);
     });
   }, []);
 
-  // Auto-settle hourly payouts every 5 minutes while the dashboard is open
   useEffect(() => {
     const id = setInterval(() => { void refresh(); }, 5 * 60 * 1000);
     return () => clearInterval(id);
@@ -60,22 +56,28 @@ function Dashboard() {
       return;
     }
     setInvesting(plan.id);
-    const end = new Date(); end.setDate(end.getDate() + plan.duration_days);
-    const { error } = await supabase.from("investments").insert({
-      user_id: profile.id, plan_id: plan.id, plan_code: plan.code,
-      amount: plan.price, daily_return: plan.daily_return,
-      duration_days: plan.duration_days,
-      total_return: Number(plan.daily_return) * plan.duration_days,
-      end_date: end.toISOString(),
-    });
-    if (error) { toast.error(error.message); setInvesting(null); return; }
-    await supabase.from("profiles").update({
-      balance: Number(profile.balance) - Number(plan.price),
-      last_plan: plan.code,
-    }).eq("id", profile.id);
-    await refresh();
-    setInvesting(null);
-    toast.success(`Investimento ${plan.code} ativado!`);
+    try {
+      const end = new Date(); end.setDate(end.getDate() + plan.duration_days);
+      await addDoc(collection(db, "investments"), {
+        user_id: profile.id, plan_id: plan.id, plan_code: plan.code,
+        amount: plan.price, daily_return: plan.daily_return,
+        duration_days: plan.duration_days,
+        total_return: Number(plan.daily_return) * plan.duration_days,
+        end_date: end.toISOString(), start_date: new Date().toISOString(),
+        status: "active", earned: 0, last_payout_at: null,
+        created_at: new Date().toISOString(),
+      });
+      await updateDoc(doc(db, "profiles", profile.id), {
+        balance: Number(profile.balance) - Number(plan.price),
+        last_plan: plan.code,
+      });
+      await refresh();
+      toast.success(`Investimento ${plan.code} ativado!`);
+    } catch (err: any) {
+      toast.error(err?.message ?? "Erro");
+    } finally {
+      setInvesting(null);
+    }
   };
 
   return (
@@ -151,27 +153,16 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* Botões flutuantes */}
       <div className="fixed right-4 bottom-24 z-40 flex flex-col gap-3">
         {whatsappUrl && (
-          <a
-            href={whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="WhatsApp"
-            className="size-12 rounded-full bg-card border border-border/60 flex items-center justify-center shadow-lg"
-          >
+          <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"
+            className="size-12 rounded-full bg-card border border-border/60 flex items-center justify-center shadow-lg">
             <MessageCircle className="size-6 text-success" />
           </a>
         )}
         {communityUrl && (
-          <a
-            href={communityUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Comunidade"
-            className="size-12 rounded-full bg-card border border-border/60 flex items-center justify-center shadow-lg"
-          >
+          <a href={communityUrl} target="_blank" rel="noopener noreferrer" aria-label="Comunidade"
+            className="size-12 rounded-full bg-card border border-border/60 flex items-center justify-center shadow-lg">
             <Users className="size-6 text-success" />
           </a>
         )}

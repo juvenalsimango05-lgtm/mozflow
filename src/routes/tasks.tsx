@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth-context";
-import { supabase } from "@/integrations/supabase/client";
+import { queryDocs, addDoc, collection, db, doc, updateDoc } from "@/lib/firestore-helpers";
+import { where, orderBy } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Play, Check } from "lucide-react";
@@ -36,14 +37,13 @@ function TasksPage() {
     if (!profile) return;
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
-    const [{ data: t }, { data: c }] = await Promise.all([
-      supabase.from("tasks").select("*").eq("is_active", true).order("created_at"),
-      supabase.from("task_claims").select("task_id, created_at").eq("user_id", profile.id),
+    const [t, c] = await Promise.all([
+      queryDocs<Task>("tasks", where("is_active", "==", true), orderBy("created_at")),
+      queryDocs<{ task_id: string; created_at: string }>("task_claims", where("user_id", "==", profile.id)),
     ]);
-    setTasks((t as Task[]) ?? []);
-    const all = (c ?? []) as { task_id: string; created_at: string }[];
-    setClaimed(new Set(all.map((x) => x.task_id)));
-    setClaimedToday(all.filter((x) => new Date(x.created_at) >= startOfDay).length);
+    setTasks(t);
+    setClaimed(new Set(c.map((x) => x.task_id)));
+    setClaimedToday(c.filter((x) => new Date(x.created_at) >= startOfDay).length);
   };
   useEffect(() => { load(); }, [profile]);
 
@@ -63,15 +63,20 @@ function TasksPage() {
       return;
     }
     setClaiming(true);
-    const { error } = await supabase.from("task_claims").insert({ user_id: profile.id, task_id: active.id, reward: active.reward });
-    if (error) { toast.error(error.message); setClaiming(false); return; }
-    await supabase.from("profiles").update({
-      balance: Number(profile.balance) + Number(active.reward),
-      total_earnings: Number(profile.total_earnings) + Number(active.reward),
-    }).eq("id", profile.id);
-    toast.success(`+${active.reward} MZN!`);
-    setActive(null); setClaiming(false);
-    await refresh(); load();
+    try {
+      await addDoc(collection(db, "task_claims"), { user_id: profile.id, task_id: active.id, reward: active.reward, created_at: new Date().toISOString() });
+      await updateDoc(doc(db, "profiles", profile.id), {
+        balance: Number(profile.balance) + Number(active.reward),
+        total_earnings: Number(profile.total_earnings) + Number(active.reward),
+      });
+      toast.success(`+${active.reward} MZN!`);
+      setActive(null);
+      await refresh(); load();
+    } catch (err: any) {
+      toast.error(err?.message ?? "Erro");
+    } finally {
+      setClaiming(false);
+    }
   };
 
   const embed = active ? youtubeEmbed(active.video_url) : null;

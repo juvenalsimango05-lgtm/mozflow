@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { queryDocs } from "@/lib/firestore-helpers";
+import { where } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Copy, Share2, Users } from "lucide-react";
 import { toast } from "sonner";
@@ -15,7 +16,7 @@ function ReferralPage() {
 
   useEffect(() => {
     if (!profile) return;
-    supabase.from("profiles").select("id", { count: "exact", head: true }).eq("referred_by", profile.id).then(({ count }) => setCount(count ?? 0));
+    queryDocs("profiles", where("referred_by", "==", profile.id)).then(docs => setCount(docs.length));
   }, [profile]);
 
   const link = typeof window !== "undefined" && profile ? `${window.location.origin}/register?ref=${profile.referral_code}` : "";
