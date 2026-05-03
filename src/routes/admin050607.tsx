@@ -273,7 +273,7 @@ function SettingsLinks() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getSettings(["whatsapp_url", "community_url"]).then(m => {
+    import("@/lib/firestore-helpers").then(({ getSettings }) => getSettings(["whatsapp_url", "community_url"])).then((m: Record<string, string>) => {
       setWhatsapp(m.whatsapp_url ?? "");
       setCommunity(m.community_url ?? "");
       setLoading(false);
