@@ -1,9 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { queryDocs, getSetting, addDoc, collection, db } from "@/lib/firestore-helpers";
-import { where } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,8 +32,12 @@ function DepositPage() {
   const [minAmount, setMinAmount] = useState(50);
 
   useEffect(() => {
-    queryDocs<PayAcc>("payment_accounts", where("is_active", "==", true)).then(setAccs);
-    getSetting("deposit_min").then(v => { if (v) setMinAmount(Number(v) || 50); });
+    supabase.from("payment_accounts").select("*").eq("is_active", true).then(({ data }) => {
+      setAccs((data as PayAcc[]) ?? []);
+    });
+    supabase.from("app_settings").select("value").eq("key", "deposit_min").maybeSingle().then(({ data }) => {
+      if (data?.value) setMinAmount(Number(data.value) || 50);
+    });
   }, []);
 
   const submit = async (e: React.FormEvent) => {
@@ -44,21 +47,16 @@ function DepositPage() {
     if (!amt || amt < minAmount) { toast.error(`Valor mínimo: ${minAmount} MZN`); return; }
     if (!senderPhone.trim() || !txnId.trim()) { toast.error("Preencha número e ID da transação"); return; }
     setLoading(true);
-    try {
-      await addDoc(collection(db, "deposits"), {
-        user_id: user.uid, amount: amt, method: selected.method,
-        sender_phone: senderPhone.replace(/\s+/g, ""),
-        transaction_id: txnId.trim(),
-        receiving_account: selected.account_number,
-        status: "pending", created_at: new Date().toISOString(),
-      });
-      toast.success("Depósito enviado! Aguarde aprovação.");
-      navigate({ to: "/transactions" });
-    } catch (err: any) {
-      toast.error(err?.message ?? "Erro");
-    } finally {
-      setLoading(false);
-    }
+    const { error } = await supabase.from("deposits").insert({
+      user_id: user.id, amount: amt, method: selected.method,
+      sender_phone: senderPhone.replace(/\s+/g, ""),
+      transaction_id: txnId.trim(),
+      receiving_account: selected.account_number,
+    });
+    setLoading(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Depósito enviado! Aguarde aprovação.");
+    navigate({ to: "/transactions" });
   };
 
   if (step === "choose") {

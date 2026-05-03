@@ -1,7 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MozFlowLogo } from "@/components/MozFlowLogo";
@@ -23,15 +22,17 @@ function LoginPage() {
       return;
     }
     setLoading(true);
-    try {
-      await signInWithEmailAndPassword(auth, `${cleanPhone}@mozflow.app`, password);
-      toast.success("Bem-vindo!");
-      navigate({ to: "/dashboard" });
-    } catch {
+    const { error } = await supabase.auth.signInWithPassword({
+      email: `${cleanPhone}@mozflow.app`,
+      password,
+    });
+    setLoading(false);
+    if (error) {
       toast.error("Número ou senha incorretos");
-    } finally {
-      setLoading(false);
+      return;
     }
+    toast.success("Bem-vindo!");
+    navigate({ to: "/dashboard" });
   };
 
   return (

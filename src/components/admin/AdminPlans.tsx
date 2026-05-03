@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { db, doc, updateDoc, addDoc, deleteDoc, collection, queryDocs } from "@/lib/firestore-helpers";
-import { orderBy } from "firebase/firestore";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -14,25 +13,27 @@ interface Plan {
 
 export function AdminPlans() {
   const [plans, setPlans] = useState<Plan[]>([]);
-  const load = () => queryDocs<Plan>("plans", orderBy("sort_order")).then(setPlans);
+  const load = () => supabase.from("plans").select("*").order("sort_order").then(({ data }) => setPlans((data as Plan[]) ?? []));
   useEffect(() => { load(); }, []);
 
   const update = async (id: string, patch: Partial<Plan>) => {
-    await updateDoc(doc(db, "plans", id), patch as any);
+    const { error } = await supabase.from("plans").update(patch).eq("id", id);
+    if (error) return toast.error(error.message);
     toast.success("Plano atualizado"); load();
   };
   const create = async () => {
     const code = `T${plans.length + 1}`;
-    await addDoc(collection(db, "plans"), {
-      code, name: `Plano ${code}`, price: 100, daily_return: 50, duration_days: 5,
-      total_return: 250, net_profit: 150, sort_order: plans.length + 1, is_active: true,
-      created_at: new Date().toISOString(),
+    const { error } = await supabase.from("plans").insert({
+      code, name: `Plano ${code}`, price: 100, daily_return: 50,
+      duration_days: 5, total_return: 250, net_profit: 150,
+      sort_order: plans.length + 1, is_active: true,
     });
+    if (error) return toast.error(error.message);
     load();
   };
   const remove = async (id: string) => {
     if (!confirm("Eliminar plano?")) return;
-    await deleteDoc(doc(db, "plans", id));
+    await supabase.from("plans").delete().eq("id", id);
     load();
   };
 

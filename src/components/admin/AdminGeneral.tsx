@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getSettings, saveSetting } from "@/lib/firestore-helpers";
+import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -16,19 +16,23 @@ export function AdminGeneral() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getSettings(["referral_reward", "maintenance_enabled", "maintenance_message", "deposit_min", "withdraw_min", "withdraw_max"]).then(m => {
-      setReward(m.referral_reward ?? "0");
-      setMaintEnabled(m.maintenance_enabled === "true");
-      setMaintMsg(m.maintenance_message ?? "");
-      setDepMin(m.deposit_min ?? "50");
-      setWitMin(m.withdraw_min ?? "50");
-      setWitMax(m.withdraw_max ?? "100000");
-      setLoading(false);
-    });
+    supabase.from("app_settings").select("key,value")
+      .in("key", ["referral_reward", "maintenance_enabled", "maintenance_message", "deposit_min", "withdraw_min", "withdraw_max"])
+      .then(({ data }) => {
+        const m = Object.fromEntries((data ?? []).map((r: { key: string; value: string }) => [r.key, r.value]));
+        setReward(m.referral_reward ?? "0");
+        setMaintEnabled(m.maintenance_enabled === "true");
+        setMaintMsg(m.maintenance_message ?? "");
+        setDepMin(m.deposit_min ?? "50");
+        setWitMin(m.withdraw_min ?? "50");
+        setWitMax(m.withdraw_max ?? "100000");
+        setLoading(false);
+      });
   }, []);
 
   const save = async (key: string, value: string) => {
-    await saveSetting(key, value);
+    const { error } = await supabase.from("app_settings").upsert({ key, value, updated_at: new Date().toISOString() });
+    if (error) return toast.error(error.message);
     toast.success("Guardado");
   };
 

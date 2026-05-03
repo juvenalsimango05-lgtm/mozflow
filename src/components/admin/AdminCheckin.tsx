@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { db, doc, getDoc, setDoc, queryDocs } from "@/lib/firestore-helpers";
-import { where } from "firebase/firestore";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -15,20 +14,21 @@ export function AdminCheckin() {
 
   const load = async (d: string) => {
     setLoading(true);
-    const [sSnap, checkins] = await Promise.all([
-      getDoc(doc(db, "checkin_settings", d)),
-      queryDocs("checkins", where("day", "==", d)),
+    const [{ data: s }, { count }] = await Promise.all([
+      supabase.from("checkin_settings").select("*").eq("day", d).maybeSingle(),
+      supabase.from("checkins").select("id", { count: "exact", head: true }).eq("day", d),
     ]);
-    if (sSnap.exists()) { const s = sSnap.data(); setReward(String(s.reward)); setIsOpen(s.is_open); }
+    if (s) { setReward(String(s.reward)); setIsOpen(s.is_open); }
     else { setReward("10"); setIsOpen(true); }
-    setClaimed(checkins.length);
+    setClaimed(count ?? 0);
     setLoading(false);
   };
   useEffect(() => { load(day); }, [day]);
 
   const save = async () => {
     const r = Math.max(0, Number(reward) || 0);
-    await setDoc(doc(db, "checkin_settings", day), { day, reward: r, is_open: isOpen, updated_at: new Date().toISOString() });
+    const { error } = await supabase.from("checkin_settings").upsert({ day, reward: r, is_open: isOpen, updated_at: new Date().toISOString() });
+    if (error) return toast.error(error.message);
     toast.success("Pesquisa do dia guardada");
   };
 

@@ -1,9 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { getSettings, queryDocs, addDoc, collection, db, doc, updateDoc } from "@/lib/firestore-helpers";
-import { where } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,14 +24,17 @@ function WithdrawPage() {
   const [investCount, setInvestCount] = useState<number | null>(null);
 
   useEffect(() => {
-    getSettings(["withdraw_min", "withdraw_max"]).then(m => {
+    supabase.from("app_settings").select("key,value").in("key", ["withdraw_min", "withdraw_max"]).then(({ data }) => {
+      const m = Object.fromEntries((data ?? []).map((r: { key: string; value: string }) => [r.key, r.value]));
       if (m.withdraw_min) setMinAmt(Number(m.withdraw_min) || 50);
       if (m.withdraw_max) setMaxAmt(Number(m.withdraw_max) || 100000);
     });
     if (user) {
-      queryDocs("investments", where("user_id", "==", user.uid)).then(docs => setInvestCount(docs.length));
+      supabase.from("investments").select("id", { count: "exact", head: true }).eq("user_id", user.id).then(({ count }) => {
+        setInvestCount(count ?? 0);
+      });
     }
-  }, [user]);
+  }, []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,21 +46,18 @@ function WithdrawPage() {
     if (!phone.trim()) { toast.error("Indique o número de destino"); return; }
     if ((investCount ?? 0) < 2) { toast.error("Precisa aderir a pelo menos 2 planos antes de levantar."); return; }
     setLoading(true);
-    try {
-      await addDoc(collection(db, "withdrawals"), {
-        user_id: user.uid, amount: amt, method,
-        destination_phone: phone.replace(/\s+/g, ""),
-        status: "pending", created_at: new Date().toISOString(),
-      });
-      await updateDoc(doc(db, "profiles", user.uid), { balance: Number(profile.balance) - amt });
+    const { error } = await supabase.from("withdrawals").insert({
+      user_id: user.id, amount: amt, method,
+      destination_phone: phone.replace(/\s+/g, ""),
+    });
+    if (!error) {
+      await supabase.from("profiles").update({ balance: Number(profile.balance) - amt }).eq("id", user.id);
       await refresh();
-      toast.success("Pedido enviado! Aguarde aprovação.");
-      navigate({ to: "/transactions" });
-    } catch (err: any) {
-      toast.error(err?.message ?? "Erro");
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Pedido enviado! Aguarde aprovação.");
+    navigate({ to: "/transactions" });
   };
 
   return (

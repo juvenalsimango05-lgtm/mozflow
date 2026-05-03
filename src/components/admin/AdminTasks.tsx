@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { db, doc, updateDoc, addDoc, deleteDoc, collection, queryDocs } from "@/lib/firestore-helpers";
-import { orderBy } from "firebase/firestore";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -13,16 +12,17 @@ export function AdminTasks() {
   const [title, setTitle] = useState(""); const [url, setUrl] = useState("");
   const [secs, setSecs] = useState(30); const [reward, setReward] = useState(5);
 
-  const load = () => queryDocs<Task>("tasks", orderBy("created_at")).then(setTasks);
+  const load = () => supabase.from("tasks").select("*").order("created_at").then(({ data }) => setTasks((data as Task[]) ?? []));
   useEffect(() => { load(); }, []);
 
   const add = async () => {
     if (!title.trim() || !url.trim()) return toast.error("Preencha título e link");
-    await addDoc(collection(db, "tasks"), { title: title.trim(), video_url: url.trim(), watch_seconds: secs, reward, is_active: true, sort_order: 0, created_at: new Date().toISOString() });
+    const { error } = await supabase.from("tasks").insert({ title: title.trim(), video_url: url.trim(), watch_seconds: secs, reward });
+    if (error) return toast.error(error.message);
     setTitle(""); setUrl(""); load();
   };
-  const toggle = async (t: Task) => { await updateDoc(doc(db, "tasks", t.id), { is_active: !t.is_active }); load(); };
-  const remove = async (id: string) => { if (!confirm("Eliminar?")) return; await deleteDoc(doc(db, "tasks", id)); load(); };
+  const toggle = async (t: Task) => { await supabase.from("tasks").update({ is_active: !t.is_active }).eq("id", t.id); load(); };
+  const remove = async (id: string) => { if (!confirm("Eliminar?")) return; await supabase.from("tasks").delete().eq("id", id); load(); };
 
   return (
     <div className="space-y-3">

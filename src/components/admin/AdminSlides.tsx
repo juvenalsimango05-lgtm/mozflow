@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { db, doc, updateDoc, queryDocs } from "@/lib/firestore-helpers";
-import { orderBy } from "firebase/firestore";
+import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -13,8 +12,8 @@ export function AdminSlides() {
   const [loading, setLoading] = useState(true);
 
   const load = () => {
-    queryDocs<Slide>("home_slides", orderBy("slot")).then(data => {
-      setSlides(data);
+    supabase.from("home_slides").select("*").order("slot").then(({ data }) => {
+      setSlides((data as Slide[]) ?? []);
       setLoading(false);
     });
   };
@@ -25,10 +24,13 @@ export function AdminSlides() {
   };
 
   const save = async (s: Slide) => {
-    await updateDoc(doc(db, "home_slides", s.id), {
-      image_url: s.image_url.trim(), link_url: s.link_url.trim(),
-      is_active: s.is_active, updated_at: new Date().toISOString(),
-    });
+    const { error } = await supabase.from("home_slides").update({
+      image_url: s.image_url.trim(),
+      link_url: s.link_url.trim(),
+      is_active: s.is_active,
+      updated_at: new Date().toISOString(),
+    }).eq("id", s.id);
+    if (error) return toast.error(error.message);
     toast.success(`Slide ${s.slot} guardado`);
   };
 

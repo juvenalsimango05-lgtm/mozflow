@@ -1,9 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { queryDocs } from "@/lib/firestore-helpers";
-import { where, orderBy } from "firebase/firestore";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/transactions")({ component: TxPage });
@@ -25,9 +24,9 @@ function TxPage() {
 
   useEffect(() => {
     if (!user) return;
-    queryDocs("deposits", where("user_id", "==", user.uid), orderBy("created_at", "desc")).then(setDeps);
-    queryDocs("withdrawals", where("user_id", "==", user.uid), orderBy("created_at", "desc")).then(setWits);
-    queryDocs("investments", where("user_id", "==", user.uid), orderBy("created_at", "desc")).then(setInvs);
+    supabase.from("deposits").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).then(({ data }) => setDeps(data ?? []));
+    supabase.from("withdrawals").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).then(({ data }) => setWits(data ?? []));
+    supabase.from("investments").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).then(({ data }) => setInvs(data ?? []));
   }, [user]);
 
   return (

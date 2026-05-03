@@ -1,8 +1,6 @@
 import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useState } from "react";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase";
-import { ensureProfile } from "@/lib/auth-context";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MozFlowLogo } from "@/components/MozFlowLogo";
@@ -34,16 +32,22 @@ function RegisterPage() {
       return;
     }
     setLoading(true);
-    try {
-      const cred = await createUserWithEmailAndPassword(auth, `${cleanPhone}@mozflow.app`, password);
-      await ensureProfile(cred.user.uid, { name: name.trim(), phone: cleanPhone, referral_code_used: referral.trim() });
-      toast.success("Conta criada com sucesso!");
-      navigate({ to: "/dashboard" });
-    } catch (err: any) {
-      toast.error(err?.code === "auth/email-already-in-use" ? "Número já registado" : (err?.message ?? "Erro"));
-    } finally {
-      setLoading(false);
+    const email = `${cleanPhone}@mozflow.app`;
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/dashboard`,
+        data: { name: name.trim(), phone: cleanPhone, referral_code: referral.trim() },
+      },
+    });
+    setLoading(false);
+    if (error) {
+      toast.error(error.message.includes("already") ? "Número já registado" : error.message);
+      return;
     }
+    toast.success("Conta criada com sucesso!");
+    navigate({ to: "/dashboard" });
   };
 
   return (

@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { db, doc, updateDoc, queryDocs, getSetting, saveSetting } from "@/lib/firestore-helpers";
-import { orderBy } from "firebase/firestore";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -12,22 +11,23 @@ export function AdminRoulette() {
   const [freeSpins, setFreeSpins] = useState("1");
 
   const load = async () => {
-    const [p, s] = await Promise.all([
-      queryDocs<Prize>("roulette_prizes", orderBy("slot_index")),
-      getSetting("roulette_free_spins_per_day"),
+    const [{ data: p }, { data: s }] = await Promise.all([
+      supabase.from("roulette_prizes").select("*").order("slot_index"),
+      supabase.from("app_settings").select("value").eq("key", "roulette_free_spins_per_day").maybeSingle(),
     ]);
-    setPrizes(p);
-    if (s) setFreeSpins(s);
+    setPrizes((p as Prize[]) ?? []);
+    if (s) setFreeSpins(s.value);
   };
   useEffect(() => { load(); }, []);
 
   const update = async (p: Prize) => {
-    await updateDoc(doc(db, "roulette_prizes", p.id), { label: p.label, amount: p.amount, probability: p.probability });
+    const { error } = await supabase.from("roulette_prizes").update({ label: p.label, amount: p.amount, probability: p.probability }).eq("id", p.id);
+    if (error) return toast.error(error.message);
     toast.success("Prémio guardado");
   };
   const saveSpins = async () => {
     const n = Math.max(0, parseInt(freeSpins) || 0);
-    await saveSetting("roulette_free_spins_per_day", String(n));
+    await supabase.from("app_settings").upsert({ key: "roulette_free_spins_per_day", value: String(n), updated_at: new Date().toISOString() });
     toast.success("Voltas grátis guardado");
   };
   const totalProb = prizes.reduce((s, p) => s + Number(p.probability), 0);
