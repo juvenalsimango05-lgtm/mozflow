@@ -273,17 +273,16 @@ function SettingsLinks() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.from("app_settings").select("key,value").in("key", ["whatsapp_url", "community_url"]).then(({ data }) => {
-      const map = Object.fromEntries((data ?? []).map((r: { key: string; value: string }) => [r.key, r.value]));
-      setWhatsapp(map.whatsapp_url ?? "");
-      setCommunity(map.community_url ?? "");
+    getSettings(["whatsapp_url", "community_url"]).then(m => {
+      setWhatsapp(m.whatsapp_url ?? "");
+      setCommunity(m.community_url ?? "");
       setLoading(false);
     });
   }, []);
 
   const save = async (key: string, value: string) => {
-    const { error } = await supabase.from("app_settings").upsert({ key, value, updated_at: new Date().toISOString() });
-    if (error) { toast.error(error.message); return; }
+    const { saveSetting } = await import("@/lib/firestore-helpers");
+    await saveSetting(key, value);
     toast.success("Link guardado");
   };
 
