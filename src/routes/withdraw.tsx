@@ -21,6 +21,7 @@ function WithdrawPage() {
   const [loading, setLoading] = useState(false);
   const [minAmt, setMinAmt] = useState(50);
   const [maxAmt, setMaxAmt] = useState(100000);
+  const [investCount, setInvestCount] = useState<number | null>(null);
 
   useEffect(() => {
     supabase.from("app_settings").select("key,value").in("key", ["withdraw_min", "withdraw_max"]).then(({ data }) => {
@@ -28,6 +29,11 @@ function WithdrawPage() {
       if (m.withdraw_min) setMinAmt(Number(m.withdraw_min) || 50);
       if (m.withdraw_max) setMaxAmt(Number(m.withdraw_max) || 100000);
     });
+    if (user) {
+      supabase.from("investments").select("id", { count: "exact", head: true }).eq("user_id", user.id).then(({ count }) => {
+        setInvestCount(count ?? 0);
+      });
+    }
   }, []);
 
   const submit = async (e: React.FormEvent) => {
@@ -38,6 +44,7 @@ function WithdrawPage() {
     if (amt > maxAmt) { toast.error(`Máximo: ${maxAmt} MZN`); return; }
     if (amt > Number(profile.balance)) { toast.error("Saldo insuficiente"); return; }
     if (!phone.trim()) { toast.error("Indique o número de destino"); return; }
+    if ((investCount ?? 0) < 2) { toast.error("Precisa aderir a pelo menos 2 planos antes de levantar."); return; }
     setLoading(true);
     const { error } = await supabase.from("withdrawals").insert({
       user_id: user.id, amount: amt, method,
