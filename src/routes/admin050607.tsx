@@ -1,7 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { supabase } from "@/integrations/supabase/client";
+import { db, doc, getDoc, updateDoc, addDoc, collection, queryDocs, getSetting } from "@/lib/firestore-helpers";
+import { orderBy, where } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -27,88 +28,89 @@ function AdminPage() {
 
   const load = useCallback(async () => {
     const [d, w, u, a] = await Promise.all([
-      supabase.from("deposits").select("*, profiles!deposits_user_id_profile_fkey(name, phone)").order("created_at", { ascending: false }),
-      supabase.from("withdrawals").select("*, profiles!withdrawals_user_id_profile_fkey(name, phone)").order("created_at", { ascending: false }),
-      supabase.from("profiles").select("*").order("created_at", { ascending: false }).limit(200),
-      supabase.from("payment_accounts").select("*").order("created_at"),
+      queryDocs("deposits", orderBy("created_at", "desc")),
+      queryDocs("withdrawals", orderBy("created_at", "desc")),
+      queryDocs("profiles", orderBy("created_at", "desc")),
+      queryDocs("payment_accounts", orderBy("created_at")),
     ]);
-    setDeps(d.data ?? []); setWits(w.data ?? []); setUsers(u.data ?? []); setAccs(a.data ?? []);
+    // Enrich deposits/withdrawals with profile info
+    const profMap = new Map(u.map((p: any) => [p.id, p]));
+    setDeps(d.map((x: any) => ({ ...x, profiles: profMap.get(x.user_id) ?? null })));
+    setWits(w.map((x: any) => ({ ...x, profiles: profMap.get(x.user_id) ?? null })));
+    setUsers(u);
+    setAccs(a);
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
 
   const approveDeposit = async (d: any) => {
-    const { error } = await supabase.from("deposits").update({ status: "approved", reviewed_by: user!.id, reviewed_at: new Date().toISOString() }).eq("id", d.id).eq("status", "pending");
-    if (error) return toast.error(error.message);
-    const { data: prof } = await supabase.from("profiles").select("balance, total_deposit").eq("id", d.user_id).single();
-    if (prof) {
-      await supabase.from("profiles").update({
+    await updateDoc(doc(db, "deposits", d.id), { status: "approved", reviewed_by: user!.uid, reviewed_at: new Date().toISOString() });
+    const profSnap = await getDoc(doc(db, "profiles", d.user_id));
+    if (profSnap.exists()) {
+      const prof = profSnap.data();
+      await updateDoc(doc(db, "profiles", d.user_id), {
         balance: Number(prof.balance) + Number(d.amount),
         total_deposit: Number(prof.total_deposit) + Number(d.amount),
-      }).eq("id", d.user_id);
+      });
     }
-    // Credit referral reward to the referrer (only on the user's FIRST approved deposit)
-    const { data: depUser } = await supabase.from("profiles").select("referred_by").eq("id", d.user_id).single();
-    if (depUser?.referred_by) {
-      const { count: priorApproved } = await supabase.from("deposits")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", d.user_id).eq("status", "approved").neq("id", d.id);
-      if ((priorApproved ?? 0) === 0) {
-        const { data: rewardSetting } = await supabase.from("app_settings").select("value").eq("key", "referral_reward").single();
-        const rewardAmt = Number(rewardSetting?.value ?? 0);
+    // Referral reward on first approved deposit
+    const depProf = profSnap.exists() ? profSnap.data() : null;
+    if (depProf?.referred_by) {
+      const priorApproved = await queryDocs("deposits", where("user_id", "==", d.user_id), where("status", "==", "approved"));
+      if (priorApproved.filter((x: any) => x.id !== d.id).length === 0) {
+        const rewardVal = await getSetting("referral_reward");
+        const rewardAmt = Number(rewardVal ?? 0);
         if (rewardAmt > 0) {
-          const { data: refProf } = await supabase.from("profiles").select("balance, referral_earnings").eq("id", depUser.referred_by).single();
-          if (refProf) {
-            await supabase.from("profiles").update({
+          const refSnap = await getDoc(doc(db, "profiles", depProf.referred_by));
+          if (refSnap.exists()) {
+            const refProf = refSnap.data();
+            await updateDoc(doc(db, "profiles", depProf.referred_by), {
               balance: Number(refProf.balance) + rewardAmt,
               referral_earnings: Number(refProf.referral_earnings) + rewardAmt,
-            }).eq("id", depUser.referred_by);
-            await supabase.from("referral_earnings").insert({
-              referrer_id: depUser.referred_by,
+            });
+            await addDoc(collection(db, "referral_earnings"), {
+              referrer_id: depProf.referred_by,
               referred_user_id: d.user_id,
               amount: rewardAmt,
+              created_at: new Date().toISOString(),
             });
           }
         }
       }
     }
-    toast.success("Depósito aprovado e saldo creditado");
-    load();
+    toast.success("Depósito aprovado e saldo creditado"); load();
   };
   const rejectDeposit = async (d: any) => {
-    const { error } = await supabase.from("deposits").update({ status: "rejected", reviewed_by: user!.id, reviewed_at: new Date().toISOString() }).eq("id", d.id);
-    if (error) return toast.error(error.message);
+    await updateDoc(doc(db, "deposits", d.id), { status: "rejected", reviewed_by: user!.uid, reviewed_at: new Date().toISOString() });
     toast.success("Depósito rejeitado"); load();
   };
   const approveWithdraw = async (w: any) => {
-    const { error } = await supabase.from("withdrawals").update({ status: "approved", reviewed_by: user!.id, reviewed_at: new Date().toISOString() }).eq("id", w.id).eq("status", "pending");
-    if (error) return toast.error(error.message);
+    await updateDoc(doc(db, "withdrawals", w.id), { status: "approved", reviewed_by: user!.uid, reviewed_at: new Date().toISOString() });
     toast.success("Levantamento aprovado"); load();
   };
   const rejectWithdraw = async (w: any) => {
-    // refund balance
-    const { data: prof } = await supabase.from("profiles").select("balance").eq("id", w.user_id).single();
-    await supabase.from("withdrawals").update({ status: "rejected", reviewed_by: user!.id, reviewed_at: new Date().toISOString() }).eq("id", w.id);
-    if (prof) await supabase.from("profiles").update({ balance: Number(prof.balance) + Number(w.amount) }).eq("id", w.user_id);
+    const profSnap = await getDoc(doc(db, "profiles", w.user_id));
+    await updateDoc(doc(db, "withdrawals", w.id), { status: "rejected", reviewed_by: user!.uid, reviewed_at: new Date().toISOString() });
+    if (profSnap.exists()) {
+      await updateDoc(doc(db, "profiles", w.user_id), { balance: Number(profSnap.data().balance) + Number(w.amount) });
+    }
     toast.success("Rejeitado e saldo devolvido"); load();
   };
 
   const adjustBalance = async (uid: string, delta: number) => {
-    const { data: p } = await supabase.from("profiles").select("balance").eq("id", uid).single();
-    if (!p) return;
-    await supabase.from("profiles").update({ balance: Number(p.balance) + delta }).eq("id", uid);
+    const profSnap = await getDoc(doc(db, "profiles", uid));
+    if (!profSnap.exists()) return;
+    await updateDoc(doc(db, "profiles", uid), { balance: Number(profSnap.data().balance) + delta });
     toast.success("Saldo atualizado"); load();
   };
 
   const addAccount = async (method: string, num: string, name: string) => {
     if (!num.trim()) return;
-    await supabase.from("payment_accounts").insert({ method, account_number: num.trim(), account_name: name.trim() || null });
+    await addDoc(collection(db, "payment_accounts"), { method, account_number: num.trim(), account_name: name.trim() || null, is_active: true, created_at: new Date().toISOString() });
     toast.success("Conta adicionada"); load();
   };
   const toggleAccount = async (id: string, active: boolean) => {
-    await supabase.from("payment_accounts").update({ is_active: !active }).eq("id", id); load();
+    await updateDoc(doc(db, "payment_accounts", id), { is_active: !active }); load();
   };
 
   if (loading) return <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">A verificar...</div>;
