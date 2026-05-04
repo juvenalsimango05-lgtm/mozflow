@@ -48,12 +48,11 @@ function RoulettePage() {
     for (const p of prizes) { r -= Number(p.probability); if (r <= 0) { winner = p; break; } }
 
     const slice = 360 / prizes.length;
-    // Pointer is at top (12h = -90deg). conic-gradient starts at top by default in this layout,
-    // so to bring slot center under the pointer we rotate by -(center) plus full spins.
+    // Pointer is at right (3h = 90deg). conic-gradient starts at top (0deg).
+    // To bring slot center under the right pointer we offset by 90deg.
     const center = winner.slot_index * slice + slice / 2;
-    // keep monotonic increase across spins so animation always rotates forward
     const base = Math.ceil(angle / 360) * 360;
-    const target = base + 360 * 6 + (360 - center);
+    const target = base + 360 * 6 + (360 - center + 90);
     setAngle(target);
 
     setTimeout(async () => {
@@ -78,16 +77,16 @@ function RoulettePage() {
         <p className="text-center text-sm text-muted-foreground">Voltas grátis hoje: <span className="text-success font-bold">{remaining}</span> / {maxFree}</p>
 
         <div className="relative mx-auto" style={{ width: 300, height: 300 }}>
-          {/* Pointer / indicator at top */}
+          {/* Pointer / indicator at right */}
           <div
-            className="absolute -top-3 left-1/2 -translate-x-1/2 z-20 size-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
+            className="absolute top-1/2 -right-3 -translate-y-1/2 z-20 size-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
             style={{
-              borderLeft: "16px solid transparent",
-              borderRight: "16px solid transparent",
-              borderTop: "28px solid hsl(var(--primary))",
+              borderTop: "16px solid transparent",
+              borderBottom: "16px solid transparent",
+              borderRight: "28px solid hsl(var(--primary))",
             }}
           />
-          <div className="absolute -top-1 left-1/2 -translate-x-1/2 z-20 size-3 rounded-full bg-primary border-2 border-background" />
+          <div className="absolute top-1/2 -right-1 -translate-y-1/2 z-20 size-3 rounded-full bg-primary border-2 border-background" />
           <div
             ref={wheelRef}
             className="size-full rounded-full overflow-hidden border-4 border-primary/60 shadow-[0_0_30px_rgba(124,58,237,0.4)]"
