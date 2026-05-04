@@ -79,14 +79,14 @@ function RoulettePage() {
         <div className="relative mx-auto" style={{ width: 300, height: 300 }}>
           {/* Pointer / indicator at right */}
           <div
-            className="absolute top-1/2 -right-3 -translate-y-1/2 z-20 size-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
+            className="absolute top-1/2 -right-4 -translate-y-1/2 z-20 size-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
             style={{
               borderTop: "16px solid transparent",
               borderBottom: "16px solid transparent",
               borderRight: "28px solid hsl(var(--primary))",
             }}
           />
-          <div className="absolute top-1/2 -right-1 -translate-y-1/2 z-20 size-3 rounded-full bg-primary border-2 border-background" />
+          <div className="absolute top-1/2 right-0 -translate-y-1/2 -translate-x-1/2 z-20 size-3 rounded-full bg-primary border-2 border-background" />
           <div
             ref={wheelRef}
             className="size-full rounded-full overflow-hidden border-4 border-primary/60 shadow-[0_0_30px_rgba(124,58,237,0.4)]"
