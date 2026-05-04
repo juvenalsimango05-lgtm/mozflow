@@ -127,7 +127,7 @@ function Dashboard() {
         </div>
 
         <div>
-          <h2 className="text-xl font-bold mb-3 px-1">Planos de Investimento</h2>
+
           <div className="space-y-3">
             {plans.map((p) => (
               <div key={p.id} className="rounded-2xl p-4 flex gap-4" style={{ background: "var(--gradient-card)", boxShadow: "var(--shadow-card)" }}>
@@ -142,7 +142,7 @@ function Dashboard() {
                     <div><span className="text-muted-foreground">LUCRO:</span> <span className="font-semibold text-success">{Number(p.net_profit)} MZN</span></div>
                   </div>
                   <Button size="sm" className="mt-2 rounded-full w-full" disabled={investing === p.id} onClick={() => invest(p)} style={{ background: "var(--gradient-primary)" }}>
-                    <Plus className="size-4 mr-1" /> {investing === p.id ? "..." : "Investir"}
+                    <Plus className="size-4 mr-1" /> {investing === p.id ? "..." : "Comprar"}
                   </Button>
                 </div>
               </div>
