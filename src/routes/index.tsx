@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { MozFlowLogo } from "@/components/MozFlowLogo";
 import { useAuth } from "@/lib/auth-context";
 import { Infinity as InfIcon, Clock, CalendarDays, ShieldCheck, TrendingUp, Wallet } from "lucide-react";
-import carImage from "@/assets/car-tesla.jpg";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -39,10 +38,6 @@ function Index() {
         <div className="mt-7 flex gap-3 justify-center">
           <Link to="/register" search={{ ref: "" }}><Button size="lg" className="rounded-full px-8">Começar agora</Button></Link>
           <Link to="/login"><Button size="lg" variant="outline" className="rounded-full px-8">Já tenho conta</Button></Link>
-        </div>
-
-        <div className="mt-10 rounded-2xl overflow-hidden border border-border/50" style={{ background: "var(--gradient-card)" }}>
-          <img src={carImage} alt="Carro Tesla branco" className="w-full h-auto object-contain" />
         </div>
 
         <div className="mt-10 grid sm:grid-cols-3 gap-4">
