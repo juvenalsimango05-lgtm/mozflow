@@ -162,3 +162,15 @@
     color: var(--color-foreground);
   }
 }
+
+/* Hide Lovable branding badge globally */
+#lovable-badge,
+a[href*="lovable.dev"],
+a[href*="lovable.app/projects"],
+iframe[src*="lovable"],
+[data-lovable-badge] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
