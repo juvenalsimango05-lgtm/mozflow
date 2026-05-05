@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Plus, MessageCircle, Users, PlaySquare, Sparkles, Gift } from "lucide-react";
+import { Plus, MessageCircle, Users, PlaySquare, Sparkles, Gift, X, Star } from "lucide-react";
 import promo247 from "@/assets/promo-247.png";
 import promoSecurity from "@/assets/promo-security.png";
 import carTesla from "@/assets/car-tesla.jpg";
@@ -31,6 +31,27 @@ function Dashboard() {
   const [whatsappUrl, setWhatsappUrl] = useState<string>("");
   const [communityUrl, setCommunityUrl] = useState<string>("");
   const [slides, setSlides] = useState<SlideRow[]>([]);
+  const [showPromo, setShowPromo] = useState(false);
+  const [referralCount, setReferralCount] = useState(0);
+
+  useEffect(() => {
+    if (!profile) return;
+    const key = `promo_dismissed_${profile.id}`;
+    if (localStorage.getItem(key)) return;
+    supabase
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("referred_by", profile.id)
+      .then(({ count }) => {
+        setReferralCount(count ?? 0);
+        setShowPromo(true);
+      });
+  }, [profile]);
+
+  const dismissPromo = () => {
+    if (profile) localStorage.setItem(`promo_dismissed_${profile.id}`, "1");
+    setShowPromo(false);
+  };
 
   useEffect(() => {
     supabase.from("plans").select("*").eq("is_active", true).order("sort_order").then(({ data }) => {
@@ -150,6 +171,32 @@ function Dashboard() {
           </div>
         </div>
       </div>
+      {/* Botões flutuantes */}
+
+      {/* Promo modal */}
+      {showPromo && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm">
+          <div className="w-full max-w-md mx-4 mb-6 rounded-3xl bg-card p-6 text-center relative animate-in slide-in-from-bottom duration-300">
+            <button onClick={dismissPromo} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
+              <X className="size-5" />
+            </button>
+            <div className="mx-auto mb-4 size-20 rounded-full flex items-center justify-center" style={{ background: "var(--gradient-primary)", boxShadow: "0 0 30px oklch(0.7 0.2 25 / 0.4)" }}>
+              <Star className="size-10 text-primary-foreground" />
+            </div>
+            <h2 className="text-xl font-bold uppercase">CORRIDA MOZFLOW +3000MT</h2>
+            <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
+              Todos que CONVIDAREM 60 Amigos Ganham 3000 MZN.<br />
+              Não perca a festa MozFlow — copia agora o link no teu perfil e começa a convidar!
+            </p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Progresso: <span className="font-bold text-foreground">{referralCount}/60</span> convidados
+            </p>
+            <Button onClick={dismissPromo} className="w-full mt-5 rounded-full h-12 text-base font-semibold" variant="outline">
+              Entendi
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Botões flutuantes */}
       <div className="fixed right-4 bottom-24 z-40 flex flex-col gap-3">
