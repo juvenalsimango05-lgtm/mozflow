@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useRef } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -32,16 +33,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const settleRef = useRef(false); // only settle once per mount
 
   const loadProfile = async (uid: string) => {
-    // Settle any pending hourly payouts before reading the profile
-    await supabase.rpc("settle_hourly_payouts");
     const [{ data: p }, { data: r }] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
       supabase.from("user_roles").select("role").eq("user_id", uid),
     ]);
     setProfile(p as Profile | null);
     setIsAdmin(!!r?.some((x: { role: string }) => x.role === "admin"));
+
+    // Settle payouts in the background (non-blocking, once per mount)
+    if (!settleRef.current) {
+      settleRef.current = true;
+      Promise.resolve(supabase.rpc("settle_hourly_payouts")).then(() => {
+        // Refresh balance silently after settle
+        supabase.from("profiles").select("*").eq("id", uid).maybeSingle().then(({ data }) => {
+          if (data) setProfile(data as Profile);
+        });
+      }, () => { /* ignore settle errors */ });
+    }
   };
 
   useEffect(() => {
@@ -49,7 +60,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
-        setTimeout(() => loadProfile(s.user.id), 0);
+        // Use queueMicrotask to avoid blocking render
+        queueMicrotask(() => loadProfile(s.user.id));
       } else {
         setProfile(null);
         setIsAdmin(false);
@@ -64,9 +76,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     if (user) await loadProfile(user.id);
-  };
+  }, [user]);
   const signOut = async () => {
     await supabase.auth.signOut();
     window.location.href = "/";

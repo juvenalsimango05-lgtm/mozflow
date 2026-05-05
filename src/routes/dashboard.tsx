@@ -68,9 +68,9 @@ function Dashboard() {
     });
   }, []);
 
-  // Auto-settle hourly payouts every 5 minutes while the dashboard is open
+  // Auto-refresh balance every 10 minutes (settle runs in background via auth)
   useEffect(() => {
-    const id = setInterval(() => { void refresh(); }, 5 * 60 * 1000);
+    const id = setInterval(() => { void refresh(); }, 10 * 60 * 1000);
     return () => clearInterval(id);
   }, [refresh]);
 
@@ -116,7 +116,7 @@ function Dashboard() {
             {display.map((s, i) => {
               const inner = (
                 <div className="aspect-[16/9] w-full overflow-hidden rounded-2xl" style={{ boxShadow: "var(--shadow-card)" }}>
-                  <img src={s.image_url} alt={`Promo ${i + 1}`} className="w-full h-full object-cover" />
+                  <img src={s.image_url} alt={`Promo ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
                 </div>
               );
               return (
@@ -153,7 +153,7 @@ function Dashboard() {
             {plans.map((p) => (
               <div key={p.id} className="rounded-2xl p-4 flex gap-4" style={{ background: "var(--gradient-card)", boxShadow: "var(--shadow-card)" }}>
                 <div className="size-24 rounded-xl bg-white flex items-center justify-center overflow-hidden">
-                  <img src={carTesla} alt="Tesla" className="w-full h-full object-contain" />
+                  <img src={carTesla} alt="Tesla" className="w-full h-full object-contain" loading="lazy" />
                 </div>
                 <div className="flex-1">
                   <div className="text-2xl font-bold">{p.code}</div>
