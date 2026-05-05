@@ -7,6 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/withdraw")({ component: WithdrawPage });
 
@@ -22,6 +31,9 @@ function WithdrawPage() {
   const [minAmt, setMinAmt] = useState(50);
   const [maxAmt, setMaxAmt] = useState(100000);
   const [investCount, setInvestCount] = useState<number | null>(null);
+  const [maxCompleted, setMaxCompleted] = useState<number | null>(null);
+  const [completedPlanName, setCompletedPlanName] = useState<string | null>(null);
+  const [limitDialog, setLimitDialog] = useState<{ open: boolean; max: number; plan: string }>({ open: false, max: 0, plan: "" });
 
   useEffect(() => {
     supabase.from("app_settings").select("key,value").in("key", ["withdraw_min", "withdraw_max"]).then(({ data }) => {
@@ -33,6 +45,22 @@ function WithdrawPage() {
       supabase.from("investments").select("id", { count: "exact", head: true }).eq("user_id", user.id).then(({ count }) => {
         setInvestCount(count ?? 0);
       });
+      // Get highest completed plan total_return
+      supabase
+        .from("investments")
+        .select("total_return, plan_code")
+        .eq("user_id", user.id)
+        .eq("status", "completed")
+        .order("total_return", { ascending: false })
+        .limit(1)
+        .then(({ data }) => {
+          if (data && data.length > 0) {
+            setMaxCompleted(Number(data[0].total_return));
+            setCompletedPlanName(data[0].plan_code);
+          } else {
+            setMaxCompleted(0);
+          }
+        });
     }
   }, []);
 
@@ -45,6 +73,15 @@ function WithdrawPage() {
     if (amt > Number(profile.balance)) { toast.error("Saldo insuficiente"); return; }
     if (!phone.trim()) { toast.error("Indique o número de destino"); return; }
     if ((investCount ?? 0) < 2) { toast.error("Precisa aderir a pelo menos 2 planos antes de levantar."); return; }
+    // Check if amount exceeds highest completed plan return
+    if (maxCompleted !== null && amt > maxCompleted) {
+      setLimitDialog({
+        open: true,
+        max: maxCompleted,
+        plan: completedPlanName ?? "desconhecido",
+      });
+      return;
+    }
     setLoading(true);
     const { error } = await supabase.from("withdrawals").insert({
       user_id: user.id, amount: amt, method,
@@ -95,6 +132,24 @@ function WithdrawPage() {
           {loading ? "A enviar..." : "Confirmar"}
         </Button>
       </form>
+
+      <AlertDialog open={limitDialog.open} onOpenChange={(o) => setLimitDialog((p) => ({ ...p, open: o }))}>
+        <AlertDialogContent className="rounded-2xl bg-card border-0 max-w-[90%]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-center">Limite de levantamento</AlertDialogTitle>
+            <AlertDialogDescription className="text-center text-base">
+              Só podes levantar no máximo <span className="font-bold text-foreground">{limitDialog.max.toFixed(2)} MZN</span> porque
+              o plano mais alto que concluíste foi o <span className="font-bold text-foreground">{limitDialog.plan}</span> com retorno
+              de {limitDialog.max.toFixed(2)} MZN.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="sm:justify-center">
+            <AlertDialogAction className="rounded-full" style={{ background: "var(--gradient-primary)" }}>
+              Entendi
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppShell>
   );
 }
