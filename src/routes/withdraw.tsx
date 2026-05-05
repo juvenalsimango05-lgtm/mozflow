@@ -45,12 +45,11 @@ function WithdrawPage() {
       supabase.from("investments").select("id", { count: "exact", head: true }).eq("user_id", user.id).then(({ count }) => {
         setInvestCount(count ?? 0);
       });
-      // Get highest completed plan total_return
+      // Get highest purchased plan total_return
       supabase
         .from("investments")
         .select("total_return, plan_code")
         .eq("user_id", user.id)
-        .eq("status", "completed")
         .order("total_return", { ascending: false })
         .limit(1)
         .then(({ data }) => {
@@ -139,7 +138,7 @@ function WithdrawPage() {
             <AlertDialogTitle className="text-center">Limite de levantamento</AlertDialogTitle>
             <AlertDialogDescription className="text-center text-base">
               Só podes levantar no máximo <span className="font-bold text-foreground">{limitDialog.max.toFixed(2)} MZN</span> porque
-              o plano mais alto que concluíste foi o <span className="font-bold text-foreground">{limitDialog.plan}</span> com retorno
+              o plano mais alto que aderiste foi o <span className="font-bold text-foreground">{limitDialog.plan}</span> com retorno
               de {limitDialog.max.toFixed(2)} MZN.
             </AlertDialogDescription>
           </AlertDialogHeader>
