@@ -46,12 +46,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Settle payouts in the background (non-blocking, once per mount)
     if (!settleRef.current) {
       settleRef.current = true;
-      supabase.rpc("settle_hourly_payouts").then(() => {
+      Promise.resolve(supabase.rpc("settle_hourly_payouts")).then(() => {
         // Refresh balance silently after settle
         supabase.from("profiles").select("*").eq("id", uid).maybeSingle().then(({ data }) => {
           if (data) setProfile(data as Profile);
         });
-      }).catch(() => { /* ignore settle errors */ });
+      }, () => { /* ignore settle errors */ });
     }
   };
 
