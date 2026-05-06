@@ -58,7 +58,7 @@ export const Route = createRootRoute({
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="pt" translate="no" className="notranslate">
       <head>
         <HeadContent />
       </head>
