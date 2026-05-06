@@ -55,8 +55,9 @@ function AdminPage() {
     if (depUser?.referred_by) {
       const { count: priorApproved } = await supabase.from("deposits")
         .select("id", { count: "exact", head: true })
-        .eq("user_id", d.user_id).eq("status", "approved").neq("id", d.id);
-      if ((priorApproved ?? 0) === 0) {
+        .eq("user_id", d.user_id).eq("status", "approved");
+      // This deposit was just approved, so count should be exactly 1 for first-time
+      if ((priorApproved ?? 0) <= 1) {
         const { data: rewardSetting } = await supabase.from("app_settings").select("value").eq("key", "referral_reward").single();
         const rewardAmt = Number(rewardSetting?.value ?? 0);
         if (rewardAmt > 0) {
