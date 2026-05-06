@@ -32,6 +32,7 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "google", content: "notranslate" },
       { title: "MozFlow — Investimentos 24/24" },
       { name: "description", content: "Invista, levante e ganhe a cada hora. Plataforma de investimentos rápidos, segura e sem limites." },
       { property: "og:title", content: "MozFlow — Investimentos 24/24" },
