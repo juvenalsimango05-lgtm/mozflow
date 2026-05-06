@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { MozFlowLogo } from "@/components/MozFlowLogo";
 import { toast } from "sonner";
 import { Check, X, Shield, ArrowLeft } from "lucide-react";
+import { Search } from "lucide-react";
 import { AdminPlans } from "@/components/admin/AdminPlans";
 import { AdminTasks } from "@/components/admin/AdminTasks";
 import { AdminRoulette } from "@/components/admin/AdminRoulette";
@@ -183,7 +184,7 @@ function AdminPage() {
           </TabsContent>
 
           <TabsContent value="usr" className="space-y-2 mt-3">
-            {users.map((u) => <UserRow key={u.id} u={u} onAdjust={adjustBalance} />)}
+            <UsersTab users={users} onAdjust={adjustBalance} />
           </TabsContent>
 
           <TabsContent value="acc" className="space-y-3 mt-3">
