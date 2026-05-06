@@ -48,7 +48,23 @@ export function AdminPlans() {
 function PlanRow({ plan, onSave, onDelete }: { plan: Plan; onSave: (id: string, p: Partial<Plan>) => void; onDelete: (id: string) => void }) {
   const [f, setF] = useState(plan);
   useEffect(() => setF(plan), [plan]);
-  const set = (k: keyof Plan, v: any) => setF({ ...f, [k]: v });
+  const set = (k: keyof Plan, v: any) => {
+    const next = { ...f, [k]: v };
+    // Auto-calculate when duration_days, price or total_return change
+    if (k === "duration_days" || k === "total_return") {
+      const days = k === "duration_days" ? Number(v) : next.duration_days;
+      const total = k === "total_return" ? Number(v) : next.total_return;
+      if (days > 0) {
+        next.daily_return = Math.round((total / days) * 100) / 100;
+      }
+    }
+    if (k === "total_return" || k === "price") {
+      const total = k === "total_return" ? Number(v) : next.total_return;
+      const price = k === "price" ? Number(v) : next.price;
+      next.net_profit = total - price;
+    }
+    setF(next);
+  };
 
   return (
     <div className="rounded-xl p-4 bg-card space-y-2">
