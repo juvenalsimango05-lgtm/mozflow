@@ -36,8 +36,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
       <main className="max-w-xl mx-auto">{children}</main>
-      <nav className="fixed bottom-4 left-4 right-4 z-30 flex justify-center">
-        <div className="max-w-xl w-full grid grid-cols-5 rounded-full bg-card/90 backdrop-blur-xl border border-border/30 shadow-lg shadow-black/20 px-2 py-1">
+      <nav className="fixed bottom-4 left-4 right-4 z-30 flex justify-center" translate="no">
+        <div className="max-w-xl w-full grid grid-cols-5 rounded-full bg-card/90 backdrop-blur-xl border border-border/30 shadow-lg shadow-black/20 px-2 py-1 notranslate">
           {items.map(({ to, icon: I, label }) => {
             const active = path === to;
             return (
