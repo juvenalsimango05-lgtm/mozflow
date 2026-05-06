@@ -277,27 +277,6 @@ function UsersTab({ users, onAdjust }: { users: any[]; onAdjust: (id: string, d:
   );
 }
 
-function UserRow_Original({ u, onAdjust }: { u: any; onAdjust: (id: string, d: number) => void }) {
-  const [val, setVal] = useState("");
-  return (
-    <div className="rounded-xl p-4 bg-card space-y-2">
-      <div className="flex justify-between">
-        <div>
-          <div className="font-bold">{u.name}</div>
-          <div className="text-xs text-muted-foreground">{u.phone} • Ref: {u.referral_code}</div>
-        </div>
-        <div className="text-right text-xs">
-          <div>Saldo: <span className="text-success font-bold">{Number(u.balance).toFixed(2)}</span></div>
-          <div>Depósitos: {Number(u.total_deposit).toFixed(2)}</div>
-        </div>
-      </div>
-      <div className="flex gap-2">
-        <Input value={val} onChange={(e) => setVal(e.target.value)} placeholder="Valor (+/-)" type="number" className="h-9 bg-muted border-0" />
-        <Button size="sm" onClick={() => { const n = Number(val); if (n) { onAdjust(u.id, n); setVal(""); } }}>Ajustar</Button>
-      </div>
-    </div>
-  );
-}
 
 function AddAccountForm({ onAdd }: { onAdd: (m: string, n: string, name: string) => void }) {
   const [method, setMethod] = useState("M-Pesa");
